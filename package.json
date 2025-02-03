@@ -5,10 +5,10 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node src/app.js",
-    "dev": "nodemon src/app.js",
+    "start": "node --loader ts-node/esm src/app.ts",
+    "dev": "nodemon --exec node --loader ts-node/esm src/app.ts",
     "build": "tsc",
-    "seed": "ts-node ./mock/seed.ts"
+    "seed": "node --loader ts-node/esm mock/seed.ts"
   },
   "keywords": [],
   "author": "",
