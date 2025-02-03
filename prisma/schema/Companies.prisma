@@ -1,0 +1,33 @@
+model Companies {
+    id           String              @id @default(uuid())
+    idx          Int                 @default(autoincrement())
+    name         String
+    image        String?             @default("default-company-logo.svg") ///XXX: 로고 이미지 없는 작은 기업들은 디폴트 이미지 보여주도록. 프론트에서 디폴트에 해당하는 이미지 파일 추가하자.
+    content      String
+    salesRevenue Int                 @default(0) ///매출액
+    employeeCnt  Int                 @default(0) ///사원 수
+    createdAt    DateTime            @default(now())
+    updatedAt    DateTime            @updatedAt
+    deletedAt    DateTime?
+    comments     CompaniesComments[] ///1:N
+    category     Category[] /// N:N 하나의 회사가 여러 개의 카테고리 - 하나의 카테고리를 여러 개의 회사가 가지고 있을 수 있음
+}
+
+model Category {
+    id       String      @id @default(uuid())
+    category String //FIXME: enum으로 할지 string으로 할지 정하자
+    company  Companies[]
+}
+
+model CompaniesComments {
+    id        String    @id @default(uuid())
+    idx       Int       @default(autoincrement())
+    userId    String
+    companyId String
+    content   String
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+    user      Users     @relation(fields: [userId], references: [id])
+    company   Companies @relation(fields: [companyId], references: [id])
+}
