@@ -5,11 +5,12 @@ import { ParsedQs } from "qs";
 interface QueryType {
   page?: string;
   limit?: string;
+  sort?: string;
   keyword?: string;
 }
 
 // 전체 상품 목록 조회
-const getCompanyList = async (
+const getApplicationList = async (
   req: Request<{}, {}, {}, QueryType & ParsedQs>,
   res: Response
 ) => {
@@ -20,11 +21,11 @@ const getCompanyList = async (
     const skip = (page - 1) * limit; //페이지네이션을 위한 skip값 계산
 
     //정렬
-    // const sort = req.query.sort || "recent"; //(기본값: 최신순)
-    // const sortOption =
-    //   sort === "favorite"
-    //     ? { favoritesCount: "desc" } //좋아요순
-    //     : { createdAt: sort === "recent" ? "desc" : "asc" };
+    const sortOption = req.query.sortOption || "revenue"; //(기본값: 매출액)
+    const sort =
+      sortOption === "favorite"
+        ? { favoritesCount: "desc" } //좋아요순
+        : { createdAt: sortOption === "recent" ? "desc" : "asc" };
 
     //키워드 검색
     // const keyword = req.query.keyword || ""; //(기본값: 빈 문자열)
@@ -99,4 +100,4 @@ const getCompanyList = async (
   }
 };
 
-export default getCompanyList;
+export default getApplicationList;
