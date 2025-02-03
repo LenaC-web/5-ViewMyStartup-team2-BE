@@ -1,47 +1,53 @@
 model Users {
-    id               String              @id @default(uuid())
-    idx              Int                 @default(autoincrement())
-    email            String              @unique
-    password         String
-    name             String
-    nickname         String              @unique
-    createdAt        DateTime            @default(now())
-    updatedAt        DateTime            @updatedAt
-    deletedAt        DateTime? ///null이 아니라 존재하면 삭제된 데이터
-    comments         CompaniesComments[] ///1:N
-    Bookmark         Bookmark[]
-    UserApplications UserApplications[]
+  id               String              @id @default(uuid())
+  idx              Int                 @default(autoincrement())
+  email            String              @unique
+  password         String
+  name             String
+  nickname         String              @unique
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  /// null이 아니라 존재하면 삭제된 데이터
+  deletedAt        DateTime?
+  Bookmark         Bookmark[]
+  comments         CompaniesComments[]
+  UserApplications UserApplications[]
 }
 
 model Bookmark {
-    id        String    @id @default(uuid())
-    idx       Int       @default(autoincrement())
-    userId    String
-    companyId String ///FK 안걸고 인덱스만 태워서 조회하도록 
-    createdAt DateTime  @default(now())
-    updatedAt DateTime  @updatedAt
-    deletedAt DateTime? ///null이 아니라 존재하면 삭제된 데이터
-    user      Users     @relation(fields: [userId], references: [id])
+  id        String    @id @default(uuid())
+  idx       Int       @default(autoincrement())
+  userId    String
+  /// FK 안걸고 인덱스만 태워서 조회하도록 
+  companyId String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  /// null이 아니라 존재하면 삭제된 데이터
+  deletedAt DateTime?
+  user      Users     @relation(fields: [userId], references: [id])
 
-    @@index([companyId])
+  @@index([companyId])
 }
 
 model UserApplications {
-    id        String            @id @default(uuid())
-    idx       Int               @default(autoincrement())
-    userId    String
-    companyId String ///FK 안걸고 인덱스만 태워서 조회하도록
-    status    ApplicationStatus @default(PENDING) ///XXX: 지원 현황 페이지에서 지원 상태 보여줄 예정
-    createdAt DateTime          @default(now())
-    updatedAt DateTime          @updatedAt
-    deletedAt DateTime? ///null이 아니라 존재하면 삭제된 데이터
-    user      Users             @relation(fields: [userId], references: [id])
+  id        String            @id @default(uuid())
+  idx       Int               @default(autoincrement())
+  userId    String
+  /// FK 안걸고 인덱스만 태워서 조회하도록
+  companyId String
+  /// XXX: 지원 현황 페이지에서 지원 상태 보여줄 예정
+  status    ApplicationStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  /// null이 아니라 존재하면 삭제된 데이터
+  deletedAt DateTime?
+  user      Users             @relation(fields: [userId], references: [id])
 
-    @@index([companyId])
+  @@index([companyId])
 }
 
 enum ApplicationStatus {
-    PENDING //검토중
-    ACCEPTED //합격
-    REJECTED //불합격
+  PENDING
+  ACCEPTED
+  REJECTED
 }

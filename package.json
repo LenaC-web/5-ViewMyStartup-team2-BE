@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "start": "node src/app.js",
-    "dev": "nodemon src/app.js"
+    "dev": "nodemon src/app.js",
+    "build": "tsc",
+    "seed": "ts-node ./mock/seed.ts"
   },
   "keywords": [],
   "author": "",
