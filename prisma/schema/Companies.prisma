@@ -2,7 +2,7 @@ model Companies {
     id           String              @id @default(uuid())
     idx          Int                 @default(autoincrement())
     name         String
-    image        String?             @default("default-company-logo.svg") ///XXX: 로고 이미지 없는 작은 기업들은 디폴트 이미지 보여주도록. 프론트에서 디폴트에 해당하는 이미지 파일 추가하자.
+    image        String? ///XXX: 로고 이미지 없는 작은 기업들은 디폴트 이미지 보여주도록. 프론트에서 디폴트에 해당하는 이미지 파일 추가하자.
     content      String
     salesRevenue Int                 @default(0) ///매출액
     employeeCnt  Int                 @default(0) ///사원 수
