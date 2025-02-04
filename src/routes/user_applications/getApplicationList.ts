@@ -1,99 +1,133 @@
 import { prisma } from "../../prismaClient";
+import { ApplicationStatus } from "@prisma/client";
 import { Request, Response } from "express";
-import { ParsedQs } from "qs";
 
 interface QueryType {
   page?: string;
-  limit?: string;
-  sort?: string;
-  keyword?: string;
+  filter?: string;
 }
 
-// 전체 상품 목록 조회
+interface ApplicationDTO {
+  id?: string;
+  name: string;
+  image: string | null;
+  content: string;
+  status: ApplicationStatus | string;
+  applicantCount: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+interface ApplicationListResponse {
+  applications: ApplicationDTO[];
+  page: number;
+  totalPages: number;
+}
+
+interface ErrorResponse {
+  message: string;
+}
+
+// 지원 현황 조회
 const getApplicationList = async (
-  req: Request<{}, {}, {}, QueryType & ParsedQs>,
-  res: Response
+  req: Request<{}, {}, {}, QueryType>,
+  res: Response<ApplicationListResponse | ErrorResponse>
 ) => {
   try {
-    //페이지네이션
-    const page = Number(req.query.page) || 1; //(기본값: 1)
-    const limit = Number(req.query.limit) || 100; //(기본값: 100);
-    const skip = (page - 1) * limit; //페이지네이션을 위한 skip값 계산
+    const userId = req.user.id;
+    if (!userId) {
+      return res.status(401).json({ message: "일치하는 userId가 없습니다." });
+    }
 
-    //정렬
-    const sortOption = req.query.sortOption || "revenue"; //(기본값: 매출액)
-    const sort =
-      sortOption === "favorite"
-        ? { favoritesCount: "desc" } //좋아요순
-        : { createdAt: sortOption === "recent" ? "desc" : "asc" };
+    const page: number = Number(req.query.page) || 1;
+    const limit: number = 10;
+    const skip: number = (page - 1) * limit;
+    const filter: string = req.query.filter || "all"; // (기본값: 전체)
 
-    //키워드 검색
-    // const keyword = req.query.keyword || ""; //(기본값: 빈 문자열)
+    //filter가 없거나 all일때는 user가 지원한 기업 전체 조회
+    let whereCondition: any = {
+      userId,
+    };
 
-    //name, description, tags 키워드 검색 조건
-    // const searchCriteria = {
-    //   AND: [
-    //     {
-    //       OR: [
-    //         { name: { contains: keyword, mode: "insensitive" } },
-    //         { content: { contains: keyword, mode: "insensitive" } }, //insensitive: 대소문자 구문x 검색
-    //         {
-    //           category: {
-    //             some: { category: { contains: keyword, mode: "insensitive" } },
-    //           }, //some: 배열 안에 조건 만족하는 최소 하나의 요소가 있는지
-    //         },
-    //       ],
-    //     },
-    //     { deletedAt: null }, //삭제 기록이 없는 데이터만 가져오기
-    //   ],
-    // };
+    const isApplicationStatus = Object.values(ApplicationStatus).includes(
+      filter.toUpperCase() as ApplicationStatus
+    );
 
-    //products collection에서 키워드 검색 - 정렬 - skip값 만큼 항목을 건너뛰어 limit개수 만큼 데이터 불러오기(deletedAt 컬럼 제외)
-    const companies = await prisma.companies.findMany({
-      // where: searchCriteria,
-      // orderBy: sortOption,
+    //filter가 enum값에 해당하면 status 일치하는 데이터 조회
+    if (filter !== "all" && isApplicationStatus) {
+      whereCondition.status = filter.toUpperCase() as ApplicationStatus;
+    }
+
+    //userApplications 조회
+    const applications = await prisma.userApplications.findMany({
+      where: whereCondition,
+      orderBy: { createdAt: "desc" }, //지원한 순서 최신 순
       skip,
       take: limit,
+    });
+
+    //조회된 companyId 추출
+    const companyIds = applications.map((app) => app.companyId);
+
+    //지원한 기업이 없으면 빈 배열 반환하기
+    if (companyIds.length === 0) {
+      return res.status(200).json({ applications: [], totalPages: 0, page });
+    }
+
+    //companies 조회
+    const companies = await prisma.companies.findMany({
+      where: { id: { in: companyIds } },
       select: {
         id: true,
         name: true,
         image: true,
         content: true,
-        salesRevenue: true,
-        employeeCnt: true,
-        category: true, //연결된 외부 테이블 데이터도 include말고 select로 가져옴
-        createdAt: true,
-        updatedAt: true,
       },
     });
 
-    // console.log(companies);
+    //기업별 지원자 수 그룹핑
+    const applicantCounts = await prisma.userApplications.groupBy({
+      by: ["companyId"],
+      where: { companyId: { in: companyIds } },
+      _count: { companyId: true },
+    });
 
-    //총 상품 수, 페이지 수 계산
-    //검색 키워드에 맞는 전체 데이터 개수 불러오기
-    // const totalProducts = await prisma.companies.count({
-    //   where: searchCriteria,
-    // });
-    // const totalPages = Math.ceil(totalProducts / limit);
+    //지원자 수 매핑
+    const applicantCountMap = Object.fromEntries(
+      applicantCounts.map((app) => [app.companyId, app._count.companyId])
+    );
+
+    //데이터 병합
+    const formattedApplications = companies.map((company) => {
+      const application = applications.find(
+        (app) => app.companyId === company.id
+      );
+      return {
+        id: application?.id,
+        name: company.name,
+        image: company.image,
+        content: company.content,
+        status: application?.status || ApplicationStatus.PENDING,
+        applicantCount: applicantCountMap[company.id] || 0,
+        createdAt: application?.createdAt,
+        updatedAt: application?.updatedAt,
+      };
+    });
+
+    //총 지원 수, 페이지 수 계산
+    const totalApplications = await prisma.userApplications.count({
+      where: whereCondition,
+    });
+    const totalPages = Math.ceil(totalApplications / limit);
 
     //요청 성공 시 응답 객체
-    // const response = {
-    //   status: 200,
-    //   ProductList: products, //필터링된 상품 목록
-    //   totalProducts,
-    //   totalPages,
-    //   page,
-    //   limit,
-    //   sort,
-    //   keyword,
-    // };
+    const response = {
+      applications: formattedApplications,
+      page,
+      totalPages,
+    };
 
-    const formattedCompanies = companies.map((company) => ({
-      ...company,
-      salesRevenue: company.salesRevenue.toString(), // BigInt 필드를 문자열로 변환
-    }));
-
-    res.status(200).send(formattedCompanies);
+    res.status(200).send(response);
   } catch (e) {
     console.log("err:", e);
     res.status(500).send({ message: "서버 에러입니다." });
