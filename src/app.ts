@@ -23,6 +23,8 @@ app.use("/api/applications", userApplicationRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
+  console.log("짱짱");
+  console.log("asdasdasdasdasd2212312322");
   console.log(`서버가 포트 ${PORT}에서 실행중입니다`);
 });
 
