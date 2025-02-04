@@ -12,6 +12,7 @@ interface ApplicationDTO {
   name: string; //기업 이름
   image: string | null; //기업 이미지
   content: string; //기업 설명
+  category: { id: string; category: string }[]; //카테고리
   status: ApplicationStatus | string; //지원 상태
   applicantCnt: number; //해당 기업 지원자 수
   createdAt?: Date; //지원 일자
@@ -82,6 +83,7 @@ const getApplicationList = async (
         name: true,
         image: true,
         content: true,
+        category: true,
       },
     });
 
@@ -107,6 +109,7 @@ const getApplicationList = async (
         name: company.name, //기업 이름
         image: company.image, //기업 이미지
         content: company.content, //기업 설명
+        category: company.category, //카테고리
         status: application?.status || ApplicationStatus.PENDING, //지원 상태
         applicantCnt: applicantCountMap[company.id] || 0, //지원자 수
         createdAt: application?.createdAt, //지원 일자
