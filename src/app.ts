@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import { connectDB } from "./config/db";
 import userRoutes from "./routes/user/controller";
 import companyRoutes from "./routes/company/controller";
 import bookmarkRoutes from "./routes/bookmark/controller";
@@ -10,13 +9,10 @@ import userApplicationRoutes from "./routes/user_applications/controller";
 
 const app = express();
 
-// 데이터베이스 연결
-connectDB();
-
+//TODO: 프론트 배포 후에 cors 주소 추가하기
 // 기본 미들웨어
 app.use(cors());
 app.use(express.json());
-
 // 기본 라우트 구조
 app.use("/api/users", userRoutes);
 app.use("/api/companies", companyRoutes);
