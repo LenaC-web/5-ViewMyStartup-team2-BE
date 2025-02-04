@@ -1,7 +1,6 @@
 import { prisma } from "../../prismaClient";
 import { ApplicationStatus } from "@prisma/client";
 import { Request, Response } from "express";
-import { ParsedQs } from "qs";
 
 interface QueryType {
   page?: string;
@@ -31,11 +30,11 @@ interface ErrorResponse {
 
 // 지원 현황 조회
 const getApplicationList = async (
-  req: Request<{}, {}, {}, QueryType & ParsedQs>,
+  req: Request<{}, {}, {}, QueryType>,
   res: Response<ApplicationListResponse | ErrorResponse>
 ) => {
   try {
-    const userId: any = (req as any).user.id; // TODO: middleware that sets req.user 추가하기
+    const userId = req.user.id;
     if (!userId) {
       return res.status(401).json({ message: "일치하는 userId가 없습니다." });
     }

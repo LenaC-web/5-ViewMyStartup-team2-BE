@@ -23,7 +23,7 @@ const testUserMiddleware = async (
     }
 
     // req 객체에 user 정보 추가
-    (req as any).user = {
+    req.user = {
       id: user.id,
       email: user.email,
       name: user.name,
