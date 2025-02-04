@@ -9,7 +9,11 @@ const testUserMiddleware = async (
 ) => {
   try {
     //XXX: 임의로 가져온 사용자 id
-    const testUserId = "5744b58a-fc08-4bba-9e66-67f195ead2e1";
+    const testUserId = "0623d2e2-3b08-415f-a8b2-9fc3340415f0";
+
+    // "082c584a-c410-4b4d-bfd0-2ec105b3761d"
+    // "0b055848-4692-4cf1-9d0c-022570f8518b"
+    // "0dee313d-b250-4583-b7df-8720d6fd292a"
 
     // 데이터베이스에 해당 사용자가 존재하는지 확인
     const user = await prisma.users.findUnique({
