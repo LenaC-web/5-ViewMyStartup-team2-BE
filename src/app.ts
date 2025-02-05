@@ -6,9 +6,11 @@ import bookmarkRoutes from "./routes/bookmark/controller";
 import categoryRoutes from "./routes/category/controller";
 import commentRoutes from "./routes/comment/controller";
 import userApplicationRoutes from "./routes/user_applications/controller";
+import { setupSwagger } from "./swagger";
 
 const app = express();
 
+setupSwagger(app);
 //TODO: 프론트 배포 후에 cors 주소 추가하기
 // 기본 미들웨어
 app.use(cors());
