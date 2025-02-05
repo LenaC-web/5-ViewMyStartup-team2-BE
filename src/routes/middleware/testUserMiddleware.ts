@@ -1,6 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { prisma } from "../../prismaClient";
 
+//TODO:
+// 1. 새로 시드 넣으면, 거기서 유저아이디 하나 가져와서 testUserId에 넣고 api호출 잘 되는지 확인해보기
+// 2. npm run build해서 build 잘 되는지 보기
+// 3. cd .dist node ./src/app.js 실행해보기
+// 4. 문제 없으면 dev로 pr올리기
+
 // 테스트용 미들웨어
 const testUserMiddleware = async (
   req: Request,
@@ -9,11 +15,11 @@ const testUserMiddleware = async (
 ) => {
   try {
     //XXX: 임의로 가져온 사용자 id
-    const testUserId = "0623d2e2-3b08-415f-a8b2-9fc3340415f0";
+    const testUserId = "d292ec89-4228-47de-8fc4-bcc18003a34c";
 
-    // "082c584a-c410-4b4d-bfd0-2ec105b3761d"
-    // "0b055848-4692-4cf1-9d0c-022570f8518b"
-    // "0dee313d-b250-4583-b7df-8720d6fd292a"
+    // "d6057330-2469-43dc-a8dd-7a6c18c2361e"
+    // "d6e465ad-0068-4c3c-ac69-94dae47d2f2d"
+    // "f422310a-01a2-43d7-a218-744359174960"
 
     // 데이터베이스에 해당 사용자가 존재하는지 확인
     const user = await prisma.users.findUnique({
