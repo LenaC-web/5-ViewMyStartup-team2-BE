@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const prismaClient_1 = require("../../prismaClient");
 const testUserMiddleware = async (req, res, next) => {
     try {
-        const testUserId = "0623d2e2-3b08-415f-a8b2-9fc3340415f0";
+        const testUserId = "d292ec89-4228-47de-8fc4-bcc18003a34c";
         const user = await prismaClient_1.prisma.users.findUnique({
             where: { id: testUserId },
         });
