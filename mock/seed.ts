@@ -1,9 +1,19 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, ApplicationStatus } from "@prisma/client";
+import { faker } from "@faker-js/faker/locale/ko";
 import { COMPANIES } from "./mock";
 
 const prisma = new PrismaClient();
 
 async function main() {
+  // 0. 기존 데이터 삭제
+  console.log("기존데이터를 삭제합니다.");
+  await prisma.bookmark.deleteMany();
+  await prisma.userApplications.deleteMany();
+  await prisma.users.deleteMany();
+  await prisma.companies.deleteMany();
+
+  const USER_COUNT = 100;
+
   // 1. 카테고리 데이터 삽입 (중복 카테고리 방지)
   const categories = await Promise.all(
     [...new Set(COMPANIES.map((company) => company.category))].map(
@@ -26,6 +36,7 @@ async function main() {
   );
 
   // 2. 회사 데이터 삽입 (Companies 테이블)
+  const createdCompanies = []; //생성된 회사들 저장할 배열
   for (const company of COMPANIES) {
     const createdCompany = await prisma.companies.create({
       data: {
@@ -45,10 +56,87 @@ async function main() {
         },
       },
     });
+    createdCompanies.push(createdCompany); // 생성된 회사들 배열에 추가
     console.log(`${createdCompany.name} 회사 등록이 완료되었습니다. `);
   }
 
-  console.log("mock데이터 삽입이 완료되었습니다.");
+  // 3. 사용자 100명 생성
+
+  // 데이터베이스에서 모든 회사의 ID를 가져오기
+  // 회사 데이터를 `createdCompanies` 배열에서 가져와서 사용
+  const companyIds = createdCompanies.map((company) => company.id);
+
+  for (let i = 0; i < USER_COUNT; i++) {
+    // 사용자 기본 정보 생성
+    const userName = faker.person.fullName();
+
+    const user = await prisma.users.create({
+      data: {
+        email: faker.internet.email(),
+        password: "password123", // 해시화 없이 단순 문자열로 저장
+        name: userName, // 생성한 이름 사용
+        nickname: userName + faker.number.int({ min: 1, max: 999 }), // 이름 + 숫자
+      },
+    });
+
+    // 북마크 생성 (5~30개, 중복 없이)
+    const bookmarkCount = faker.number.int({ min: 5, max: 30 });
+    const shuffledCompaniesForBookmark = faker.helpers.shuffle([...companyIds]);
+    const selectedCompaniesForBookmark = shuffledCompaniesForBookmark.slice(
+      0,
+      bookmarkCount
+    );
+
+    for (const companyId of selectedCompaniesForBookmark) {
+      await prisma.bookmark.create({
+        data: {
+          userId: user.id,
+          companyId,
+        },
+      });
+    }
+
+    // 지원 내역 생성 (5~30개, 중복 없이)
+    const applicationCount = faker.number.int({ min: 5, max: 30 });
+    const shuffledCompaniesForApplication = faker.helpers.shuffle([
+      ...companyIds,
+    ]);
+    const selectedCompaniesForApplication =
+      shuffledCompaniesForApplication.slice(0, applicationCount);
+
+    for (const companyId of selectedCompaniesForApplication) {
+      const status = faker.helpers.arrayElement([
+        ApplicationStatus.PENDING,
+        ApplicationStatus.ACCEPTED,
+        ApplicationStatus.REJECTED,
+      ]);
+
+      await prisma.userApplications.create({
+        data: {
+          userId: user.id,
+          companyId,
+          status,
+        },
+      });
+    }
+
+    // 진행 상황 로깅
+    if ((i + 1) % 10 === 0) {
+      console.log(
+        `Created ${i + 1} users with their bookmarks and applications`
+      );
+    }
+  }
+
+  // 최종 데이터 수 확인
+  const userCount = await prisma.users.count();
+  const bookmarkCount = await prisma.bookmark.count();
+  const applicationCount = await prisma.userApplications.count();
+
+  console.log("\nSeed data creation completed!");
+  console.log(`Created ${userCount} users`);
+  console.log(`Created ${bookmarkCount} bookmarks`);
+  console.log(`Created ${applicationCount} applications`);
 }
 
 main()
