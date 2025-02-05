@@ -26,6 +26,10 @@ const options: swaggerJSDoc.Options = {
         name: "Users",
         description: "사용자 관련 API",
       },
+      {
+        name: "Applications",
+        description: "사용자 지원 현황 관련 API",
+      },
     ],
   },
   apis: ["./src/routes/**/*.ts"], // Swagger 주석이 포함된 파일 경로
