@@ -1,12 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { prisma } from "../../prismaClient";
 
-//TODO:
-// 1. 새로 시드 넣으면, 거기서 유저아이디 하나 가져와서 testUserId에 넣고 api호출 잘 되는지 확인해보기
-// 2. npm run build해서 build 잘 되는지 보기
-// 3. cd .dist node ./src/app.js 실행해보기
-// 4. 문제 없으면 dev로 pr올리기
-
 // 테스트용 미들웨어
 const testUserMiddleware = async (
   req: Request,
