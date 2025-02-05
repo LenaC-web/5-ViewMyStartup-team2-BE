@@ -8,7 +8,8 @@ interface BookmarkRequest {
 }
 
 // 📝북마크 목록 조회
-const getBookmarks = async (userId: string) => {
+const getBookmarks = async (req: Request, res: Response) => {
+  const { userId } = req.params;
   try {
     // 1. 사용자의 즐겨찾기 목록 조회
     const bookmarks = await prisma.bookmark.findMany({
@@ -20,15 +21,16 @@ const getBookmarks = async (userId: string) => {
         createdAt: "desc",
       },
     });
-    return bookmarks;
+    res.status(200).json(bookmarks);
   } catch (err) {
     console.error("Error message in getBookmarks", err);
-    throw new Error("즐겨찾기 조회 실패");
+    res.status(500).json({ message: "즐겨찾기 조회 실패" });
   }
 };
 
 // 📝북마크 생성
-const createBookmark = async ({ userId, companyId }: BookmarkRequest) => {
+const createBookmark = async (req: Request, res: Response) => {
+  const { userId, companyId } = req.body;
   try {
     // 1. 유효성 검증: 사용자가 이미 해당 회사에 대해 즐겨찾기를 추가했는지 확인
     const existingBookmark = await prisma.bookmark.findFirst({
@@ -40,7 +42,9 @@ const createBookmark = async ({ userId, companyId }: BookmarkRequest) => {
     });
     // 이미 즐겨찾기로 존재하는 경우
     if (existingBookmark) {
-      throw new Error("이 기업은 이미 즐겨찾기로 등록되어 있습니다.");
+      return res
+        .status(400)
+        .json({ message: "이 기업은 이미 즐겨찾기로 등록되어 있습니다." });
     }
     // 2. 즐겨찾기 추가
     const newBookmark = await prisma.bookmark.create({
@@ -49,15 +53,16 @@ const createBookmark = async ({ userId, companyId }: BookmarkRequest) => {
         companyId,
       },
     });
-    return newBookmark;
+    res.status(201).json(newBookmark); // 생성된 북마크 반환
   } catch (err) {
     console.error("Error message in createBookmark", err);
-    throw new Error("즐겨찾기 추가 실패");
+    res.status(500).json({ message: "즐겨찾기 추가 실패" });
   }
 };
 
 // 📝북마크 삭제
-const deleteBookmark = async ({ userId, companyId }: BookmarkRequest) => {
+const deleteBookmark = async (req: Request, res: Response) => {
+  const { userId, companyId } = req.body;
   try {
     const bookmark = await prisma.bookmark.findFirst({
       where: {
@@ -67,7 +72,9 @@ const deleteBookmark = async ({ userId, companyId }: BookmarkRequest) => {
       },
     });
     if (!bookmark) {
-      throw new Error("이미 삭제된 즐겨찾기입니다.");
+      return res
+        .status(404)
+        .json({ message: "해당 즐겨찾기를 찾을 수 없습니다." });
     }
     //삭제날짜
     const deletedBookmark = await prisma.bookmark.update({
@@ -78,10 +85,10 @@ const deleteBookmark = async ({ userId, companyId }: BookmarkRequest) => {
         deletedAt: new Date(),
       },
     });
-    return deletedBookmark;
+    res.status(200).json(deletedBookmark);
   } catch (err) {
     console.error("Error message in deleteBookmark", err);
-    throw new Error("즐겨찾기 삭제 실패");
+    res.status(500).json({ message: "즐겨찾기 삭제 실패" });
   }
 };
 
