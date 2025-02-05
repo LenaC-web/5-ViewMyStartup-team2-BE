@@ -1,12 +1,6 @@
 import { prisma } from "../../prismaClient";
 import { Request, Response } from "express";
 
-// 요청 데이터 타입 정의
-interface BookmarkRequest {
-  userId: string;
-  companyId: string;
-}
-
 // 📝북마크 목록 조회
 const getBookmarks = async (req: Request, res: Response) => {
   const { userId } = req.params;
@@ -14,13 +8,18 @@ const getBookmarks = async (req: Request, res: Response) => {
     // 1. 사용자의 즐겨찾기 목록 조회
     const bookmarks = await prisma.bookmark.findMany({
       where: {
-        userId,
+        userId: userId,
         deletedAt: null, // 삭제되지 않은 즐겨찾기만 조회
       },
       orderBy: {
         createdAt: "desc",
       },
     });
+    if (bookmarks.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "해당 사용자의 즐겨찾기가 없습니다." });
+    }
     res.status(200).json(bookmarks);
   } catch (err) {
     console.error("Error message in getBookmarks", err);
@@ -30,7 +29,8 @@ const getBookmarks = async (req: Request, res: Response) => {
 
 // 📝북마크 생성
 const createBookmark = async (req: Request, res: Response) => {
-  const { userId, companyId } = req.body;
+  const { userId } = req.params; // URL의 userId 파라미터 받기
+  const { companyId } = req.body; // 요청 본문에서 companyId 받기
   try {
     // 1. 유효성 검증: 사용자가 이미 해당 회사에 대해 즐겨찾기를 추가했는지 확인
     const existingBookmark = await prisma.bookmark.findFirst({
@@ -62,7 +62,8 @@ const createBookmark = async (req: Request, res: Response) => {
 
 // 📝북마크 삭제
 const deleteBookmark = async (req: Request, res: Response) => {
-  const { userId, companyId } = req.body;
+  const { userId } = req.params; // URL의 userId 파라미터 받기
+  const { companyId } = req.body; // 요청 본문에서 companyId 받기
   try {
     const bookmark = await prisma.bookmark.findFirst({
       where: {
