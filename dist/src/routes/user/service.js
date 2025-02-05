@@ -12,7 +12,7 @@ const getuserList = async (req, res) => {
     }
     catch (error) {
         console.error(error);
-        return res.status(500).json({ error: "서버 오류" });
+        return res.status(500).json({ error: error });
     }
 };
 const createUser = async (req, res) => {
