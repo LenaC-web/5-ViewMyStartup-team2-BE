@@ -1,3 +1,4 @@
+/// 회사
 model Companies {
   id           String              @id @default(uuid())
   idx          Int                 @default(autoincrement())
@@ -16,12 +17,14 @@ model Companies {
   category     Category[]          @relation("CategoryToCompanies")
 }
 
+/// 회사안에 카테고리에 들어갈 것
 model Category {
   id       String      @id @default(uuid())
   category String
   company  Companies[] @relation("CategoryToCompanies")
 }
 
+/// 회사 리뷰? 댓글?
 model CompaniesComments {
   id        String    @id @default(uuid())
   idx       Int       @default(autoincrement())
