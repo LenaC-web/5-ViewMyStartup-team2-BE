@@ -23,29 +23,32 @@ const getCompaniesCommentList = async (req: Request, res: Response) => {
   }
 };
 
-// 코멘트 상세 조회
-const getCompaniesComment = async (req: Request, res: Response) => {
-  const { id } = req.params;
+// 코멘트 목록 조회 by ID
+const getCompaniesCommentListById = async (req: Request, res: Response) => {
   try {
-    const comment = await prisma.companiesComments.findUnique({
-      where: {
-        id,
-        deletedAt: null,
-      },
-      include: {
-        user: true,
-        company: true,
-      },
-    });
+    const { companyId } = req.params; // URL에서 route parameter로 받기 (예: /companies/123/comments)
 
-    if (!comment) {
-      return res.status(404).json({ error: "해당 코멘트를 찾을 수 없습니다." });
+    if (!companyId) {
+      return res.status(400).json({ error: "회사 ID가 필요합니다" });
     }
 
-    return res.status(200).json(comment);
+    const comments = await prisma.companiesComments.findMany({
+      where: {
+        companyId,
+        deletedAt: null, // 삭제되지 않은 코멘트만 조회
+      },
+      orderBy: {
+        createdAt: "desc", // 최신 생성순 정렬
+      },
+      include: {
+        user: true, // 사용자 정보 포함
+        company: true, // 회사 정보 포함
+      },
+    });
+    return res.status(200).json(comments);
   } catch (error) {
-    console.error("Error message in getCompaniesComment", error);
-    return res.status(500).json({ error: "코멘트 상세 조회 실패" });
+    console.error("Error message in getCompaniesCommentListById", error);
+    return res.status(500).json({ error: "코멘트 목록 조회 실패" });
   }
 };
 
@@ -113,7 +116,7 @@ const deleteCompaniesComment = async (req: Request, res: Response) => {
 
 const commentService = {
   getCompaniesCommentList,
-  getCompaniesComment,
+  getCompaniesCommentListById,
   createCompaniesComment,
   updateCompaniesComment,
   deleteCompaniesComment,
