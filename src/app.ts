@@ -6,6 +6,7 @@ import bookmarkRoutes from "./routes/bookmark/controller";
 import categoryRoutes from "./routes/category/controller";
 import commentRoutes from "./routes/comment/controller";
 import userApplicationRoutes from "./routes/user_applications/controller";
+import mainRoutes from "./routes/main/controller";
 import { setupSwagger } from "./swagger";
 
 const app = express();
@@ -22,6 +23,7 @@ app.use("/api/bookmarks", bookmarkRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/applications", userApplicationRoutes);
+app.use("/api/main", mainRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
