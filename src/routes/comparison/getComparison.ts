@@ -4,7 +4,7 @@ import { Request, Response } from "express";
 import { handleError } from "../err/errHandler";
 
 /* 지원한 회사 목록 조회
-http://localhost:3000/api/comparison/pick?page=1
+GET http://localhost:3000/api/comparison/pick?page=1&&keyword=펀더풀
 */
 const getCompanyApplication = async (req: Request, res: Response) => {
   try {
@@ -12,13 +12,13 @@ const getCompanyApplication = async (req: Request, res: Response) => {
     const page = Math.max(parseInt(req.query.page?.toString() ?? "1"), 1);
     const limit = Math.max(parseInt(req.query.limit?.toString() ?? "5"), 1);
     const offset = (page - 1) * limit;
+    const keyword = req.query.keyword?.toString() ?? "";
 
     // 사용자가 지원한 회사 ID 조회
     const appliedCompanies = await prisma.userApplications.findMany({
       where: { userId },
       select: { companyId: true },
     });
-
     const companyIds = [
       ...new Set(appliedCompanies.map((app) => app.companyId)),
     ];
@@ -31,28 +31,26 @@ const getCompanyApplication = async (req: Request, res: Response) => {
       });
     }
 
-    // 전체 회사 조회
+    // 전체 회사 조회 (전체 랭킹 계산을 위해)
     const allCompanies = await prisma.companies.findMany({
       include: { category: true },
     });
 
-    // 전체 회사에 대한 랭킹 정보 매핑
+    // 전체 회사에 대한 랭킹 정보 매핑 객체 생성
     const rankMaps = {
       applicant: new Map<string, number>(),
       salesRevenue: new Map<string, number>(),
       employee: new Map<string, number>(),
     };
 
-    // 지원자 수에 따른 랭킹 매핑
+    // 1. 지원자 수에 따른 랭킹 계산
     const applicantCounts = await prisma.userApplications.groupBy({
       by: ["companyId"],
       _count: { companyId: true },
     });
-
     const userApplicationCountMap = new Map(
       applicantCounts.map((uc) => [uc.companyId, uc._count.companyId])
     );
-
     allCompanies
       .slice()
       .sort(
@@ -64,7 +62,7 @@ const getCompanyApplication = async (req: Request, res: Response) => {
         rankMaps.applicant.set(company.id, index + 1);
       });
 
-    // 매출에 따른 랭킹 매핑
+    // 2. 매출에 따른 랭킹 계산
     allCompanies
       .slice()
       .sort((a, b) => Number(b.salesRevenue) - Number(a.salesRevenue))
@@ -72,7 +70,7 @@ const getCompanyApplication = async (req: Request, res: Response) => {
         rankMaps.salesRevenue.set(company.id, index + 1);
       });
 
-    // 직원 수에 따른 랭킹 매핑
+    // 3. 직원 수에 따른 랭킹 계산
     allCompanies
       .slice()
       .sort((a, b) => b.employeeCnt - a.employeeCnt)
@@ -80,29 +78,38 @@ const getCompanyApplication = async (req: Request, res: Response) => {
         rankMaps.employee.set(company.id, index + 1);
       });
 
-    // 지원자 수 및 랭킹 정보 조회
-    const [applicantCountsForUser, rankedCompanies] = await Promise.all([
-      prisma.userApplications.groupBy({
-        by: ["companyId"],
-        where: { companyId: { in: companyIds } },
-        _count: { companyId: true },
-      }),
-      prisma.companies.findMany({
-        where: { id: { in: companyIds } },
-        include: {
-          category: true,
-        },
-      }),
-    ]);
-
+    // 사용자가 지원한 회사 정보 조회 (지원한 회사만)
+    const [applicantCountsForUser, appliedCompaniesDetails] = await Promise.all(
+      [
+        prisma.userApplications.groupBy({
+          by: ["companyId"],
+          where: { companyId: { in: companyIds } },
+          _count: { companyId: true },
+        }),
+        prisma.companies.findMany({
+          where: { id: { in: companyIds } },
+          include: { category: true },
+        }),
+      ]
+    );
     const userApplicationCountMapForUser = new Map(
       applicantCountsForUser.map((uc) => [uc.companyId, uc._count.companyId])
     );
 
-    // 페이지네이션 적용
-    const paginatedCompanies = rankedCompanies.slice(offset, offset + limit);
+    // 검색어가 있을 경우에만 지원한 회사 목록에서 필터링, 없으면 전체 지원한 회사를 사용
+    const filteredAppliedCompanies = keyword
+      ? appliedCompaniesDetails.filter((company) =>
+          company.name.toLowerCase().includes(keyword)
+        )
+      : appliedCompaniesDetails;
 
-    // 응답 데이터 생성
+    // 페이지네이션 적용
+    const paginatedCompanies = filteredAppliedCompanies.slice(
+      offset,
+      offset + limit
+    );
+
+    // 응답 데이터 생성 (전체 회사 기준의 랭킹 정보 포함)
     const formattedCompanies = paginatedCompanies.map((company) => ({
       id: company.id,
       name: company.name,
@@ -117,8 +124,8 @@ const getCompanyApplication = async (req: Request, res: Response) => {
       employeeRank: rankMaps.employee.get(company.id) || null,
     }));
 
-    // 페이지네이션
-    const totalItems = companyIds.length;
+    // 페이지네이션 정보 생성
+    const totalItems = filteredAppliedCompanies.length;
     const totalPages = Math.ceil(totalItems / limit);
 
     return res.status(200).json({
