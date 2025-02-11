@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../../prismaClient";
+import { Prisma } from "@prisma/client";
 
 /**
  * @swagger
@@ -135,63 +136,46 @@ const getMainCompanyList = async (
   res: Response<CompanyListResponse | ErrorResponse>
 ) => {
   try {
-    // 1. 페이지네이션 파라미터 설정
+    // 1. 기본 파라미터 설정
     const page: number = Number(req.query.page) || 1;
     const limit: number = 10;
     const skip: number = (page - 1) * limit;
     const filter: string = req.query.filter || "revenueDesc";
     const search: string = req.query.search || "";
 
-    console.log("Query parameters:", { page, limit, skip, filter, search }); // 쿼리 파라미터 로깅
+    // 2. 기본 where 조건
+    let whereCondition: any = {
+      deletedAt: null,
+    };
 
-    // 2. 정렬 조건 설정
-    let orderBy = {};
-    switch (filter) {
-      case "revenueDesc":
-        orderBy = { salesRevenue: "desc" };
-        break;
-      case "revenueAsc":
-        orderBy = { salesRevenue: "asc" };
-        break;
-      case "employeeDesc":
-        orderBy = { employeeCnt: "desc" };
-        break;
-      case "employeeAsc":
-        orderBy = { employeeCnt: "asc" };
-        break;
-      default:
-        orderBy = { salesRevenue: "desc" };
+    // 3. 검색어가 있는 경우 조건 추가
+    if (search) {
+      whereCondition.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { content: { contains: search, mode: "insensitive" } },
+        {
+          category: {
+            some: { category: { contains: search, mode: "insensitive" } },
+          },
+        },
+      ];
     }
 
-    // 3. 회사 목록 조회 (검색 조건 추가)
+    // 4. 정렬 조건
+    const orderBy: Prisma.CompaniesOrderByWithRelationInput =
+      filter === "revenueDesc"
+        ? { salesRevenue: Prisma.SortOrder.desc }
+        : filter === "revenueAsc"
+        ? { salesRevenue: Prisma.SortOrder.asc }
+        : filter === "employeeDesc"
+        ? { employeeCnt: Prisma.SortOrder.desc }
+        : filter === "employeeAsc"
+        ? { employeeCnt: Prisma.SortOrder.asc }
+        : { salesRevenue: Prisma.SortOrder.desc };
+
+    // 5. 회사 목록 조회
     const companies = await prisma.companies.findMany({
-      where: {
-        deletedAt: null,
-        OR: [
-          {
-            name: {
-              contains: search,
-              mode: "insensitive",
-            },
-          },
-          {
-            content: {
-              contains: search,
-              mode: "insensitive",
-            },
-          },
-          {
-            category: {
-              some: {
-                category: {
-                  contains: search,
-                  mode: "insensitive",
-                },
-              },
-            },
-          },
-        ],
-      },
+      where: whereCondition,
       orderBy,
       skip,
       take: limit,
@@ -214,81 +198,48 @@ const getMainCompanyList = async (
       },
     });
 
-    console.log("Found companies:", companies); // 조회된 회사 데이터 로깅
-
-    // 4. 조회된 회사들의 ID 목록 추출
-    const companyIds = companies.map((company) => company.id);
-
-    // 5. 회사별 지원자 수 집계
+    // 6. 지원자 수 조회
     const applicantCounts = await prisma.userApplications.groupBy({
       by: ["companyId"],
-      where: { companyId: { in: companyIds } },
+      where: { companyId: { in: companies.map((c) => c.id) } },
       _count: { companyId: true },
     });
 
-    // 6. 지원자 수 매핑 (회사ID -> 지원자수)
     const applicantCountMap = Object.fromEntries(
       applicantCounts.map((app) => [app.companyId, app._count.companyId])
     );
 
-    // 7. 응답 데이터 형식에 맞게 가공
-    const formattedCompanies = companies.map((company) => ({
-      id: company.id,
-      idx: String(company.idx),
-      name: company.name,
-      image: company.image || undefined,
-      content: company.content,
-      category: company.category,
-      salesRevenue: BigInt(company.salesRevenue).toString(),
-      employeeCnt: company.employeeCnt,
-      applicantCnt: applicantCountMap[company.id] || 0, // 지원자 수 (없으면 0)
-      createdAt: company.createdAt.toISOString(), // Date -> ISO 문자열 변환
-      updatedAt: company.updatedAt.toISOString(),
-    }));
-
-    // 8. 전체 페이지 수 계산 (검색 조건 추가)
+    // 7. 응답 데이터 구성
     const totalCompanies = await prisma.companies.count({
-      where: {
-        deletedAt: null,
-        OR: [
-          {
-            name: {
-              contains: search,
-              mode: "insensitive",
-            },
-          },
-          {
-            content: {
-              contains: search,
-              mode: "insensitive",
-            },
-          },
-          {
-            category: {
-              some: {
-                category: {
-                  contains: search,
-                  mode: "insensitive",
-                },
-              },
-            },
-          },
-        ],
-      },
+      where: whereCondition,
     });
     const totalPages = Math.ceil(totalCompanies / limit);
 
-    // 9. 최종 응답 데이터 구성
     const response: CompanyListResponse = {
-      companies: formattedCompanies,
+      companies: companies.map((company) => ({
+        id: company.id,
+        idx: String(company.idx),
+        name: company.name,
+        image: company.image || undefined,
+        content: company.content,
+        category: company.category,
+        salesRevenue: company.salesRevenue.toString(),
+        employeeCnt: company.employeeCnt,
+        applicantCnt: applicantCountMap[company.id] || 0,
+        createdAt: company.createdAt.toISOString(),
+        updatedAt: company.updatedAt.toISOString(),
+      })),
       page,
       totalPages,
     };
 
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (e) {
-    console.log("err:", e);
-    res.status(500).send({ message: "서버 에러입니다." });
+    console.error("Error in getMainCompanyList:", e);
+    return res.status(500).json({
+      message: "서버 에러가 발생했습니다.",
+      error: process.env.NODE_ENV === "development" ? e.message : undefined,
+    });
   }
 };
 
