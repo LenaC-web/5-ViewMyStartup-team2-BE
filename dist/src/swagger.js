@@ -6,10 +6,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.setupSwagger = setupSwagger;
 const swagger_jsdoc_1 = __importDefault(require("swagger-jsdoc"));
 const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
-const isProd = process.env.NODE_ENV === "production";
+const isProd = process.env.NODE_ENV === "production"; // 환경 변수 확인
 const SERVER_URL = isProd
-    ? process.env.PROD_SERVER_URL || "https://api.example.com"
-    : process.env.DEV_SERVER_URL || "http://localhost:3000";
+    ? process.env.PROD_SERVER_URL || "https://api.example.com" // 배포 환경
+    : process.env.DEV_SERVER_URL || "http://localhost:3000"; // 개발 환경
 const options = {
     definition: {
         openapi: "3.0.0",
@@ -55,7 +55,7 @@ const options = {
             },
         ],
     },
-    apis: [isProd ? "./dist/routes/**/*.js" : "./src/routes/**/*.ts"],
+    apis: ["./src/routes/**/*.ts"],
 };
 const swaggerSpec = (0, swagger_jsdoc_1.default)(options);
 function setupSwagger(app) {

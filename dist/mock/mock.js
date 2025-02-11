@@ -1,6 +1,20 @@
 "use strict";
+// model company {
+//   id          String     @id @default(uuid())
+//   name        String
+//   image       String
+//   content     String
+//   employeeCnt   Int
+//   salesRevenue     Int
+//   created_at  DateTime   @default(now())
+//   update_at   DateTime   @updatedAt
+//   company_idx Int        @default(autoincrement())
+//   category    category[]
+// }
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.COMPANIES = void 0;
+//매출액(salesRevenue) 확인 불가하여 임의로 넣음
+//재직자 수 확인 불가한 곳 임의로 넣음
 exports.COMPANIES = [
     {
         name: "코드잇",

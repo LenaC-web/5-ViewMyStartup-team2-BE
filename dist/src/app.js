@@ -16,8 +16,11 @@ const controller_8 = __importDefault(require("./routes/main/controller"));
 const swagger_1 = require("./swagger");
 const app = (0, express_1.default)();
 (0, swagger_1.setupSwagger)(app);
+//TODO: 프론트 배포 후에 cors 주소 추가하기
+// 기본 미들웨어
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
+// 기본 라우트 구조
 app.use("/api/users", controller_1.default);
 app.use("/api/companies", controller_2.default);
 app.use("/api/bookmarks", controller_3.default);
