@@ -23,7 +23,6 @@ app.use("/api/bookmarks", bookmarkRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/applications", userApplicationRoutes);
-app.use("/api/comparison", comparisonRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
