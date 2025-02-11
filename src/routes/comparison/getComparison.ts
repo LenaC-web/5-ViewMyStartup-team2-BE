@@ -6,6 +6,91 @@ import { handleError } from "../err/errHandler";
 /* 지원한 회사 목록 조회
 GET http://localhost:3000/api/comparison/pick?page=1&&keyword=펀더풀
 */
+/**
+ * @swagger
+ * /api/comparison/pick:
+ *   get:
+ *     summary: 사용자가 지원한 회사 목록 조회
+ *     description: 사용자가 지원한 회사 목록을 조회하고, 매출/직원 수/지원자 수에 따른 랭킹을 포함하여 반환합니다.
+ *     tags: [Comparison]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: 페이지 번호 (기본값 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 5
+ *         description: 한 페이지에 표시할 항목 수 (기본값 5)
+ *       - in: query
+ *         name: keyword
+ *         schema:
+ *           type: string
+ *         description: 검색할 회사명 (선택 사항)
+ *     responses:
+ *       200:
+ *         description: 사용자가 지원한 회사 목록을 반환
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "지원한 회사 목록 조회 성공"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     companies:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           name:
+ *                             type: string
+ *                           image:
+ *                             type: string
+ *                           content:
+ *                             type: string
+ *                           employeeCnt:
+ *                             type: integer
+ *                           salesRevenue:
+ *                             type: string
+ *                           categories:
+ *                             type: array
+ *                             items:
+ *                               type: string
+ *                           applicantCount:
+ *                             type: integer
+ *                           applicantRank:
+ *                             type: integer
+ *                           salesRevenueRank:
+ *                             type: integer
+ *                           employeeRank:
+ *                             type: integer
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         currentPage:
+ *                           type: integer
+ *                         totalPages:
+ *                           type: integer
+ *                         totalItems:
+ *                           type: integer
+ *                         itemsPerPage:
+ *                           type: integer
+ *       500:
+ *         description: 서버 오류 발생
+ */
 const getCompanyApplication = async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
@@ -150,6 +235,89 @@ const getCompanyApplication = async (req: Request, res: Response) => {
 /* 검색한 회사 목록 조회
 GET http://localhost:3000/api/comparison/search?page=1&&keyword=펀더풀
 */
+/**
+ * @swagger
+ * /api/companies/search:
+ *   get:
+ *     summary: 회사 검색
+ *     description: 키워드를 기반으로 회사를 검색하고, 지원자 수/매출/직원 수 랭킹 정보를 포함하여 반환합니다.
+ *     tags: [Comparison]
+ *     parameters:
+ *       - in: query
+ *         name: keyword
+ *         schema:
+ *           type: string
+ *         description: 검색할 회사명 (선택 사항)
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: 페이지 번호 (기본값 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 5
+ *         description: 한 페이지에 표시할 항목 수 (기본값 5)
+ *     responses:
+ *       200:
+ *         description: 검색된 회사 목록을 반환
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "검색한 회사 목록 조회 성공"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     companies:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           name:
+ *                             type: string
+ *                           image:
+ *                             type: string
+ *                           content:
+ *                             type: string
+ *                           employeeCnt:
+ *                             type: integer
+ *                           salesRevenue:
+ *                             type: string
+ *                           categories:
+ *                             type: array
+ *                             items:
+ *                               type: string
+ *                           applicantCount:
+ *                             type: integer
+ *                           applicantRank:
+ *                             type: integer
+ *                           revenueRank:
+ *                             type: integer
+ *                           employeeRank:
+ *                             type: integer
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         currentPage:
+ *                           type: integer
+ *                         totalPages:
+ *                           type: integer
+ *                         totalItems:
+ *                           type: integer
+ *       500:
+ *         description: 서버 오류 발생
+ */
 const getSearchCompany = async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;

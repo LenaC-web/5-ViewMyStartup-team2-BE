@@ -2,6 +2,36 @@ import { prisma } from "../../prismaClient";
 import { Request, Response } from "express";
 
 // 코멘트 목록 조회
+/**
+ * @swagger
+ * /api/companies/comments:
+ *   get:
+ *     summary: 모든 코멘트 목록 조회
+ *     tags: [Comment]
+ *     responses:
+ *       200:
+ *         description: 코멘트 목록 반환
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   userId:
+ *                     type: string
+ *                   companyId:
+ *                     type: string
+ *                   content:
+ *                     type: string
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *       500:
+ *         description: 서버 오류
+ */
 const getCompaniesCommentList = async (req: Request, res: Response) => {
   try {
     const comments = await prisma.companiesComments.findMany({
@@ -24,6 +54,27 @@ const getCompaniesCommentList = async (req: Request, res: Response) => {
 };
 
 // 코멘트 목록 조회 by ID
+/**
+ * @swagger
+ * /api/companies/{companyId}/comments:
+ *   get:
+ *     summary: 특정 회사의 코멘트 목록 조회
+ *     tags: [Comment]
+ *     parameters:
+ *       - in: path
+ *         name: companyId
+ *         required: true
+ *         description: 코멘트를 조회할 회사 ID
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 해당 회사의 코멘트 목록 반환
+ *       400:
+ *         description: 회사 ID 없음
+ *       500:
+ *         description: 서버 오류
+ */
 const getCompaniesCommentListById = async (req: Request, res: Response) => {
   try {
     const { companyId } = req.params; // URL에서 route parameter로 받기 (예: /companies/123/comments)
@@ -53,6 +104,31 @@ const getCompaniesCommentListById = async (req: Request, res: Response) => {
 };
 
 // 코멘트 생성
+/**
+ * @swagger
+ * /api/companies/comments:
+ *   post:
+ *     summary: 코멘트 생성
+ *     tags: [Comment]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *               companyId:
+ *                 type: string
+ *               content:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: 생성된 코멘트 반환
+ *       500:
+ *         description: 서버 오류
+ */
 const createCompaniesComment = async (req: Request, res: Response) => {
   try {
     const { userId, companyId, content } = req.body;
@@ -75,6 +151,34 @@ const createCompaniesComment = async (req: Request, res: Response) => {
 };
 
 // 코멘트 수정
+/**
+ * @swagger
+ * /api/companies/comments/{id}:
+ *   put:
+ *     summary: 코멘트 수정
+ *     tags: [Comment]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: 수정할 코멘트 ID
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               content:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: 수정된 코멘트 반환
+ *       500:
+ *         description: 서버 오류
+ */
 const updateCompaniesComment = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { content } = req.body;
@@ -98,6 +202,25 @@ const updateCompaniesComment = async (req: Request, res: Response) => {
 };
 
 // 코멘트 삭제
+/**
+ * @swagger
+ * /api/companies/comments/{id}:
+ *   delete:
+ *     summary: 코멘트 삭제
+ *     tags: [Comment]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: 삭제할 코멘트 ID
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 삭제 성공 메시지 반환
+ *       500:
+ *         description: 서버 오류
+ */
 const deleteCompaniesComment = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {

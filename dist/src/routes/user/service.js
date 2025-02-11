@@ -1,6 +1,10 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const prismaClient_1 = require("../../prismaClient");
+const bcrypt_1 = __importDefault(require("bcrypt"));
 const getuserList = async (req, res) => {
     try {
         const users = await prismaClient_1.prisma.users.findMany({
@@ -18,10 +22,11 @@ const getuserList = async (req, res) => {
 const createUser = async (req, res) => {
     try {
         const { email, password, name, nickname } = req.body;
+        const hashedPassword = await bcrypt_1.default.hash(password, 10);
         const newUser = await prismaClient_1.prisma.users.create({
             data: {
                 email,
-                password,
+                password: hashedPassword,
                 name,
                 nickname,
             },

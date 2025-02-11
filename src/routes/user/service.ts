@@ -1,5 +1,7 @@
 import { prisma } from "../../prismaClient";
 import { Request, Response } from "express";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 // 사용자 목록 가져오기
 /**
@@ -82,10 +84,11 @@ const getuserList = async (req: Request, res: Response) => {
 const createUser = async (req: Request, res: Response) => {
   try {
     const { email, password, name, nickname } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await prisma.users.create({
       data: {
         email,
-        password,
+        password: hashedPassword,
         name,
         nickname,
       },

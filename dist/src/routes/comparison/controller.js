@@ -4,10 +4,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const service_1 = __importDefault(require("./service"));
+const testUserMiddleware_1 = __importDefault(require("../middleware/testUserMiddleware"));
+const getComparison_1 = __importDefault(require("../comparison/getComparison"));
 const router = express_1.default.Router();
-router.get("/:userId", service_1.default.getBookmarks);
-router.post("/:userId", service_1.default.createBookmark);
-router.delete("/:userId", service_1.default.deleteBookmark);
+router.get("/pick", testUserMiddleware_1.default, getComparison_1.default.getCompanyApplication);
+router.get("/search", testUserMiddleware_1.default, getComparison_1.default.getSearchCompany);
 exports.default = router;
 //# sourceMappingURL=controller.js.map
