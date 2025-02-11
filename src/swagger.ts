@@ -32,7 +32,7 @@ const options: swaggerJSDoc.Options = {
       },
     ],
   },
-  apis: ["./src/routes/**/*.ts"], // Swagger 주석이 포함된 파일 경로
+  apis: [isProd ? "./dist/routes/**/*.js" : "./src/routes/**/*.ts"],
 };
 
 const swaggerSpec = swaggerJSDoc(options);

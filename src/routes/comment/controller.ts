@@ -3,10 +3,11 @@ import service from "./service";
 
 const router = express.Router();
 
-// 댓글 관련 엔드포인트
-router.get("/", service.getBookmarks); // 댓글 목록 조회
-router.post("/", service.getBookmarks); // 댓글 생성
-router.patch("/:id", service.getBookmarks); // 댓글 수정
-router.delete("/:id", service.getBookmarks); // 댓글 삭제
+// 코멘트 관련 엔드포인트
+router.get("/", service.getCompaniesCommentList); // 코멘트 목록 조회
+router.get("/:id", service.getCompaniesCommentListById); // 코멘트 목록 조회 by ID
+router.post("/", service.createCompaniesComment); //코멘트 생성
+router.patch("/:id", service.updateCompaniesComment); // 코멘트 수정
+router.delete("/:id", service.deleteCompaniesComment); // 코멘트 삭제
 
 export default router;
