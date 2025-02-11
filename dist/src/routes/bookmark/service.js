@@ -6,13 +6,18 @@ const getBookmarks = async (req, res) => {
     try {
         const bookmarks = await prismaClient_1.prisma.bookmark.findMany({
             where: {
-                userId,
+                userId: userId,
                 deletedAt: null,
             },
             orderBy: {
                 createdAt: "desc",
             },
         });
+        if (bookmarks.length === 0) {
+            return res
+                .status(404)
+                .json({ message: "해당 사용자의 즐겨찾기가 없습니다." });
+        }
         res.status(200).json(bookmarks);
     }
     catch (err) {
@@ -21,7 +26,8 @@ const getBookmarks = async (req, res) => {
     }
 };
 const createBookmark = async (req, res) => {
-    const { userId, companyId } = req.body;
+    const { userId } = req.params;
+    const { companyId } = req.body;
     try {
         const existingBookmark = await prismaClient_1.prisma.bookmark.findFirst({
             where: {
@@ -49,7 +55,8 @@ const createBookmark = async (req, res) => {
     }
 };
 const deleteBookmark = async (req, res) => {
-    const { userId, companyId } = req.body;
+    const { userId } = req.params;
+    const { companyId } = req.body;
     try {
         const bookmark = await prismaClient_1.prisma.bookmark.findFirst({
             where: {

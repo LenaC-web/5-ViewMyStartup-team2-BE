@@ -6,9 +6,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const service_1 = __importDefault(require("./service"));
 const router = express_1.default.Router();
-router.get("/", service_1.default.getBookmarks);
-router.post("/", service_1.default.getBookmarks);
-router.patch("/:id", service_1.default.getBookmarks);
-router.delete("/:id", service_1.default.getBookmarks);
+router.get("/", service_1.default.getCompaniesCommentList);
+router.get("/:id", service_1.default.getCompaniesCommentListById);
+router.post("/", service_1.default.createCompaniesComment);
+router.patch("/:id", service_1.default.updateCompaniesComment);
+router.delete("/:id", service_1.default.deleteCompaniesComment);
 exports.default = router;
 //# sourceMappingURL=controller.js.map

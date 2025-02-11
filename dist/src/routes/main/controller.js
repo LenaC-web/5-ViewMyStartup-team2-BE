@@ -6,8 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const service_1 = __importDefault(require("./service"));
 const router = express_1.default.Router();
-router.get("/:userId", service_1.default.getBookmarks);
-router.post("/:userId", service_1.default.createBookmark);
-router.delete("/:userId", service_1.default.deleteBookmark);
+router.get("/companies", service_1.default);
 exports.default = router;
 //# sourceMappingURL=controller.js.map

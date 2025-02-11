@@ -11,6 +11,8 @@ const controller_3 = __importDefault(require("./routes/bookmark/controller"));
 const controller_4 = __importDefault(require("./routes/category/controller"));
 const controller_5 = __importDefault(require("./routes/comment/controller"));
 const controller_6 = __importDefault(require("./routes/user_applications/controller"));
+const controller_7 = __importDefault(require("./routes/comparison/controller"));
+const controller_8 = __importDefault(require("./routes/main/controller"));
 const swagger_1 = require("./swagger");
 const app = (0, express_1.default)();
 (0, swagger_1.setupSwagger)(app);
@@ -22,6 +24,8 @@ app.use("/api/bookmarks", controller_3.default);
 app.use("/api/categories", controller_4.default);
 app.use("/api/comments", controller_5.default);
 app.use("/api/applications", controller_6.default);
+app.use("/api/comparison", controller_7.default);
+app.use("/api/main", controller_8.default);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`서버가 포트 ${PORT}에서 실행중입니다`);

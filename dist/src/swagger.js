@@ -33,9 +33,29 @@ const options = {
                 name: "Applications",
                 description: "사용자 지원 현황 관련 API",
             },
+            {
+                name: "Bookmarks",
+                description: "즐겨찾기 관련 API",
+            },
+            {
+                name: "Company",
+                description: "스타트업 관련 API",
+            },
+            {
+                name: "Comment",
+                description: "댓글 관련 API",
+            },
+            {
+                name: "Main",
+                description: "",
+            },
+            {
+                name: "Comparison",
+                description: "",
+            },
         ],
     },
-    apis: ["./src/routes/**/*.ts"],
+    apis: [isProd ? "./dist/routes/**/*.js" : "./src/routes/**/*.ts"],
 };
 const swaggerSpec = (0, swagger_jsdoc_1.default)(options);
 function setupSwagger(app) {
