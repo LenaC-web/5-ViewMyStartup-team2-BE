@@ -136,19 +136,19 @@ const getMainCompanyList = async (
   res: Response<CompanyListResponse | ErrorResponse>
 ) => {
   try {
-    // 1. 기본 파라미터 설정
+    // 기본 파라미터 설정
     const page: number = Number(req.query.page) || 1;
     const limit: number = 10;
     const skip: number = (page - 1) * limit;
     const filter: string = req.query.filter || "revenueDesc";
     const search: string = req.query.search || "";
 
-    // 2. 기본 where 조건
+    // 기본 where 조건
     let whereCondition: any = {
       deletedAt: null,
     };
 
-    // 3. 검색어가 있는 경우 조건 추가
+    // 검색어가 있는 경우 조건 추가
     if (search) {
       whereCondition.OR = [
         { name: { contains: search, mode: "insensitive" } },
@@ -161,7 +161,7 @@ const getMainCompanyList = async (
       ];
     }
 
-    // 4. 정렬 조건
+    // 정렬 조건
     const orderBy: Prisma.CompaniesOrderByWithRelationInput =
       filter === "revenueDesc"
         ? { salesRevenue: Prisma.SortOrder.desc }
@@ -173,7 +173,7 @@ const getMainCompanyList = async (
         ? { employeeCnt: Prisma.SortOrder.asc }
         : { salesRevenue: Prisma.SortOrder.desc };
 
-    // 5. 회사 목록 조회
+    // 회사 목록 조회
     const companies = await prisma.companies.findMany({
       where: whereCondition,
       orderBy,
@@ -198,7 +198,7 @@ const getMainCompanyList = async (
       },
     });
 
-    // 6. 지원자 수 조회
+    // 지원자 수 조회
     const applicantCounts = await prisma.userApplications.groupBy({
       by: ["companyId"],
       where: { companyId: { in: companies.map((c) => c.id) } },
@@ -209,7 +209,7 @@ const getMainCompanyList = async (
       applicantCounts.map((app) => [app.companyId, app._count.companyId])
     );
 
-    // 7. 응답 데이터 구성
+    // 응답 데이터 구성
     const totalCompanies = await prisma.companies.count({
       where: whereCondition,
     });
