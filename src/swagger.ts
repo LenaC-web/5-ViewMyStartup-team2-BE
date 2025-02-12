@@ -1,11 +1,12 @@
 import swaggerJSDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import { Express } from "express";
+import path from "path";
 
 const isProd = process.env.NODE_ENV === "production"; // 환경 변수 확인
 const SERVER_URL = isProd
-  ? process.env.PROD_SERVER_URL || "https://api.example.com" // 배포 환경
-  : process.env.DEV_SERVER_URL || "http://localhost:3000"; // 개발 환경
+  ? process.env.PROD_SERVER_URL // 배포 환경
+  : process.env.DEV_SERVER_URL; // 개발 환경
 
 const options: swaggerJSDoc.Options = {
   definition: {
@@ -52,7 +53,12 @@ const options: swaggerJSDoc.Options = {
       },
     ],
   },
-  apis: isProd ? [".dist/src/routes/**/*.js"] : ["./src/routes/**/*.ts"],
+  apis: [
+    path.join(
+      __dirname,
+      isProd ? "../src/routes/**/*.js" : "../src/routes/**/*.ts"
+    ),
+  ],
 };
 
 const swaggerSpec = swaggerJSDoc(options);
