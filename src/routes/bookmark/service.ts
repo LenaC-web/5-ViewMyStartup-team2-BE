@@ -3,68 +3,127 @@ import { Request, Response } from "express";
 
 /**
  * @swagger
- * tags:
- *   name: Bookmarks
- *   description: Operations related to bookmarks
- */
-
-/**
- * @swagger
  * /api/bookmarks/{userId}:
  *   get:
- *     summary: 유저의 즐겨찾기 리스트
- *     tags: [Bookmarks]
+ *     tags:
+ *       - Bookmarks
+ *     summary: 사용자의 즐겨찾기 목록 조회
+ *     description: 사용자의 즐겨찾기 목록을 조회합니다. 페이지네이션과 필터링을 지원합니다.
  *     parameters:
- *       - in: path
- *         name: userId
+ *       - name: userId
+ *         in: path
+ *         description: user ID
  *         required: true
- *         description: The user ID for fetching bookmarks
  *         schema:
  *           type: string
+ *       - name: page
+ *         in: query
+ *         description: 페이지 번호
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - name: limit
+ *         in: query
+ *         description: 한 페이지에 표시할 항목 수
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 10
  *     responses:
  *       200:
- *         description: A list of bookmarks
+ *         description: 즐겨찾기 목록 조회 성공
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: string
- *                   companyId:
- *                     type: string
- *                   userId:
- *                     type: string
- *                   createdAt:
- *                     type: string
- *                     format: date-time
+ *               type: object
+ *               properties:
+ *                 totalPages:
+ *                   type: integer
+ *                   description: 전체 페이지 수
+ *                 currentPage:
+ *                   type: integer
+ *                   description: 현재 페이지
+ *                 bookmarks:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       name:
+ *                         type: string
+ *                       employeeCnt:
+ *                         type: integer
+ *                       category:
+ *                         type: string
+ *       400:
+ *         description: 잘못된 userId 또는 요청 파라미터
  *       404:
- *         description: No bookmarks found for the user
+ *         description: 즐겨찾기 데이터 없음
  *       500:
- *         description: Internal server error
+ *         description: 서버 오류
  */
 // 📝북마크 목록 조회
 const getBookmarks = async (req: Request, res: Response) => {
   const { userId } = req.params;
+  const { page = 1, limit = 10 } = req.query;
+
+  if (!userId) {
+    return res.status(400).json({ message: "잘못된 userId입니다." });
+  }
+
   try {
-    // 1. 사용자의 즐겨찾기 목록 조회
+    const offset = (Number(page) - 1) * Number(limit);
+
     const bookmarks = await prisma.bookmark.findMany({
       where: {
         userId: userId,
-        deletedAt: null, // 삭제되지 않은 즐겨찾기만 조회
+        deletedAt: null,
       },
       orderBy: {
         createdAt: "desc",
       },
+      skip: Number(offset),
+      take: Number(limit),
+      select: {
+        id: true,
+        companyId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
+
     if (bookmarks.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "해당 사용자의 즐겨찾기가 없습니다." });
+      return res.status(404).json({ message: "즐겨찾기 데이터 없음" });
     }
-    res.status(200).json(bookmarks);
+
+    const companies = await prisma.companies.findMany({
+      where: {
+        id: { in: bookmarks.map((bookmark) => bookmark.companyId) },
+      },
+      select: {
+        id: true,
+        name: true,
+        employeeCnt: true,
+        category: true,
+      },
+    });
+
+    const totalItems = await prisma.bookmark.count({
+      where: {
+        userId: userId,
+        deletedAt: null,
+      },
+    });
+    const totalPages = Math.ceil(totalItems / Number(limit));
+    const currentPage = Math.floor(Number(offset) / Number(limit)) + 1;
+
+    res.status(200).json({
+      companies,
+      currentPage,
+      totalPages,
+    });
   } catch (err) {
     console.error("Error message in getBookmarks", err);
     res.status(500).json({ message: "즐겨찾기 조회 실패" });
