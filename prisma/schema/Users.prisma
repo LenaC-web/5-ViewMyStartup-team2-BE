@@ -30,18 +30,22 @@ model Bookmark {
 }
 
 model UserApplications {
-  id        String            @id @default(uuid())
-  idx       Int               @default(autoincrement())
-  userId    String
+  id                String            @id @default(uuid())
+  idx               Int               @default(autoincrement())
+  userId            String
   /// FK 안걸고 인덱스만 태워서 조회하도록
-  companyId String
+  companyId         String
   /// XXX: 지원 현황 페이지에서 지원 상태 보여줄 예정
-  status    ApplicationStatus @default(PENDING)
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  // 지원하기에 필요한 데이터
+  applicantName     String
+  applicantPosition String
+  applicantComment  String
+  status            ApplicationStatus @default(PENDING)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
   /// null이 아니라 존재하면 삭제된 데이터
-  deletedAt DateTime?
-  user      Users             @relation(fields: [userId], references: [id])
+  deletedAt         DateTime?
+  user              Users             @relation(fields: [userId], references: [id])
 
   @@index([companyId])
 }
