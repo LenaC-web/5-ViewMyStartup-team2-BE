@@ -30,6 +30,19 @@ import { Request, Response } from "express";
  *         schema:
  *           type: integer
  *           default: 10
+ *       - name: sort
+ *         in: query
+ *         description: 정렬기준 0은 기본 값
+ *         enum:
+ *           - 0  # 기본값
+ *           - 1  # 지원한 기업 우선
+ *           - 2  # 지원하지 않은 기업 우선
+ *           - 3  # 직원 수 적은 순
+ *           - 4  # 직원 수 많은 순
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 0
  *     responses:
  *       200:
  *         description: 즐겨찾기 목록 조회 성공
@@ -67,25 +80,22 @@ import { Request, Response } from "express";
 // 📝북마크 목록 조회
 const getBookmarks = async (req: Request, res: Response) => {
   const { userId } = req.params;
-  const { page = 1, limit = 10 } = req.query;
+  const { page = 1, limit = 10, sort = 0 } = req.query;
 
   if (!userId) {
     return res.status(400).json({ message: "잘못된 userId입니다." });
   }
 
   try {
-    const offset = (Number(page) - 1) * Number(limit);
-
+    // 즐겨찾기 목록 조회
     const bookmarks = await prisma.bookmark.findMany({
       where: {
         userId: userId,
         deletedAt: null,
       },
       orderBy: {
-        createdAt: "desc",
+        createdAt: "desc", // 기본적으로 최신순
       },
-      skip: Number(offset),
-      take: Number(limit),
       select: {
         id: true,
         companyId: true,
@@ -98,29 +108,66 @@ const getBookmarks = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "즐겨찾기 데이터 없음" });
     }
 
+    const companyIds = bookmarks.map((bookmark) => bookmark.companyId);
+
     const companies = await prisma.companies.findMany({
       where: {
-        id: { in: bookmarks.map((bookmark) => bookmark.companyId) },
+        id: { in: companyIds },
       },
       select: {
         id: true,
         name: true,
+        content: true,
         employeeCnt: true,
         category: true,
       },
     });
 
-    const totalItems = await prisma.bookmark.count({
-      where: {
-        userId: userId,
-        deletedAt: null,
-      },
+    const totalItems = companies.length;
+
+    const appliedCompanies = await prisma.userApplications.findMany({
+      where: { userId },
+      select: { companyId: true },
     });
+
+    const appliedCompanyIds = new Set(
+      appliedCompanies.map((app) => app.companyId)
+    );
+
+    let companiesWithAppliedStatus = companies.map((company) => ({
+      ...company,
+      applied: appliedCompanyIds.has(company.id),
+    }));
+
+    companiesWithAppliedStatus.sort((a, b) => {
+      if (sort === "0") {
+        return;
+      }
+      if (sort === "1") {
+        return Number(b.applied) - Number(a.applied); // 지원한 기업 우선
+      }
+      if (sort === "2") {
+        return Number(a.applied) - Number(b.applied); // 지원 안한 기업 우선
+      }
+      if (sort === "3") {
+        return a.employeeCnt - b.employeeCnt; // 직원 수 적은 순
+      }
+      if (sort === "4") {
+        return b.employeeCnt - a.employeeCnt; // 직원 수 많은 순
+      }
+    });
+
+    const offset = (Number(page) - 1) * Number(limit);
+    const pagedCompanies = companiesWithAppliedStatus.slice(
+      offset,
+      offset + Number(limit)
+    );
+
     const totalPages = Math.ceil(totalItems / Number(limit));
-    const currentPage = Math.floor(Number(offset) / Number(limit)) + 1;
+    const currentPage = Number(page);
 
     res.status(200).json({
-      companies,
+      companies: pagedCompanies,
       currentPage,
       totalPages,
     });
