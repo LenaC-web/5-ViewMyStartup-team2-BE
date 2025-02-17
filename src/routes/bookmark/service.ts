@@ -122,8 +122,17 @@ const getBookmarks = async (req: Request, res: Response) => {
         category: true,
       },
     });
+    const companyApplicantCount = await prisma.userApplications.groupBy({
+      by: ["companyId"],
+      _count: {
+        companyId: true,
+      },
+    });
 
-    const totalItems = companies.length;
+    const companyApplicantMap = companyApplicantCount.reduce((acc, curr) => {
+      acc[curr.companyId] = curr._count.companyId;
+      return acc;
+    }, {});
 
     const appliedCompanies = await prisma.userApplications.findMany({
       where: { userId },
@@ -137,6 +146,7 @@ const getBookmarks = async (req: Request, res: Response) => {
     let companiesWithAppliedStatus = companies.map((company) => ({
       ...company,
       applied: appliedCompanyIds.has(company.id),
+      applicants: companyApplicantMap[company.id] || 0,
     }));
 
     companiesWithAppliedStatus.sort((a, b) => {
@@ -155,6 +165,12 @@ const getBookmarks = async (req: Request, res: Response) => {
       if (sort === "4") {
         return b.employeeCnt - a.employeeCnt; // 직원 수 많은 순
       }
+      if (sort === "5") {
+        return b.applicants - a.applicants; // 지원자 수 많은 순
+      }
+      if (sort === "6") {
+        return a.applicants - b.applicants; // 지원자 수 적은 순
+      }
     });
 
     const offset = (Number(page) - 1) * Number(limit);
@@ -163,6 +179,7 @@ const getBookmarks = async (req: Request, res: Response) => {
       offset + Number(limit)
     );
 
+    const totalItems = companies.length;
     const totalPages = Math.ceil(totalItems / Number(limit));
     const currentPage = Number(page);
 
