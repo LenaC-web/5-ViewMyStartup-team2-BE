@@ -114,6 +114,9 @@ async function main() {
       await prisma.userApplications.create({
         data: {
           userId: user.id,
+          applicantPosition: faker.person.jobTitle(),
+          applicantComment: faker.lorem.sentence(),
+          applicantName: userName,
           companyId,
           status,
         },
