@@ -115,6 +115,7 @@ const getBookmarks = async (req, res) => {
                 content: true,
                 employeeCnt: true,
                 category: true,
+                image: true,
             },
         });
         const companyApplicantCount = await prismaClient_1.prisma.userApplications.groupBy({
