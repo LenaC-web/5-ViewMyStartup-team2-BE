@@ -31,6 +31,10 @@ const options = {
                 description: "사용자 관련 API",
             },
             {
+                name: "Authentication",
+                description: "Token API",
+            },
+            {
                 name: "Applications",
                 description: "사용자 지원 현황 관련 API",
             },

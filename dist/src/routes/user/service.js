@@ -5,6 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const prismaClient_1 = require("../../prismaClient");
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
+const SECRET_KEY = process.env.JWT_SECRET;
 // 사용자 목록 가져오기
 /**
  * @swagger
@@ -94,21 +98,20 @@ const createUser = async (req, res) => {
                 nickname,
             },
         });
-        return res.status(201).json(newUser); // 새 사용자 등록 후 응답
+        return res.status(201).json(newUser);
     }
     catch (error) {
         console.error(error);
         return res.status(500).json({ error: "서버 오류" });
     }
 };
-// 로그인 처리 (단순 예시, 실제로는 비밀번호 비교 및 JWT 등을 처리해야 함)
 /**
  * @swagger
  * /api/users/login:
  *   post:
  *     tags: [Users]
  *     summary: 사용자 로그인
- *     description: 이메일과 비밀번호로 로그인합니다.
+ *     description: 이메일과 비밀번호로 로그인하고, 유효한 토큰을 반환합니다.
  *     requestBody:
  *       required: true
  *       content:
@@ -118,28 +121,189 @@ const createUser = async (req, res) => {
  *             properties:
  *               email:
  *                 type: string
+ *                 description: 사용자의 이메일
  *               password:
  *                 type: string
+ *                 description: 사용자의 비밀번호
  *     responses:
  *       200:
- *         description: 로그인 성공
+ *         description: 로그인 성공 및 토큰 발급
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 accessToken:
+ *                   type: string
+ *                   description: Access Token (1시간 유효)
+ *                 refreshToken:
+ *                   type: string
+ *                   description: Refresh Token (7일 유효)
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       description: 사용자 ID
+ *                     email:
+ *                       type: string
+ *                       description: 사용자 이메일
+ *                     name:
+ *                       type: string
+ *                       description: 사용자 이름
+ *                     nickname:
+ *                       type: string
+ *                       description: 사용자 닉네임
  *       400:
  *         description: 잘못된 이메일 또는 비밀번호
  *       500:
  *         description: 서버 오류
  */
-const loginUser = async (req, res) => {
+const login = async (req, res) => {
     try {
         const { email, password } = req.body;
         const user = await prismaClient_1.prisma.users.findUnique({
-            where: {
-                email,
-            },
+            where: { email },
         });
-        if (!user || user.password !== password) {
-            return res.status(400).json({ error: "잘못된 이메일 또는 비밀번호" });
+        let passwordIsValid = false;
+        if (user.password.includes("$2b$")) {
+            passwordIsValid = await bcrypt_1.default.compare(password, user.password);
         }
-        return res.status(200).json(user); // 로그인 성공 시 사용자 정보 응답
+        else {
+            passwordIsValid = user.password === password;
+        }
+        // Access Token 생성
+        const accessToken = jsonwebtoken_1.default.sign({ id: user.id, email: user.email }, SECRET_KEY, {
+            expiresIn: "1h", // 1시간 유효
+        });
+        // Refresh Token 생성
+        const refreshToken = jsonwebtoken_1.default.sign({ id: user.id, email: user.email }, SECRET_KEY, {
+            expiresIn: "1d", // 7일 유효
+        });
+        return res.status(200).json({ accessToken, refreshToken, user });
+    }
+    catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: "서버 오류" });
+    }
+};
+/**
+ * @swagger
+ * /api/users/verify/{token}:
+ *   get:
+ *     tags: [Authentication]
+ *     summary: 토큰 유효성 검사
+ *     description: 주어진 토큰을 검증하여 유효한지 확인합니다.
+ *     parameters:
+ *       - name: token
+ *         in: path
+ *         description: 인증 토큰
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 토큰이 유효함
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "토큰이 유효합니다."
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       description: 사용자 ID
+ *                       example: "user-id"
+ *                     email:
+ *                       type: string
+ *                       description: 사용자 이메일
+ *                       example: "user@example.com"
+ *       401:
+ *         description: 유효하지 않은 토큰 또는 토큰 미제공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "유효하지 않은 토큰입니다."
+ */
+const verifyToken = (req, res) => {
+    const { token } = req.params;
+    console.log(token);
+    if (!token) {
+        return res.status(401).json({ error: "토큰이 제공되지 않았습니다." });
+    }
+    jsonwebtoken_1.default.verify(token, SECRET_KEY, (err, decoded) => {
+        if (err) {
+            return res.status(401).json({ error: "유효하지 않은 토큰입니다." });
+        }
+        return res
+            .status(200)
+            .json({ message: "토큰이 유효합니다.", user: decoded });
+    });
+};
+/**
+ * @swagger
+ * /api/users/refresh:
+ *   post:
+ *     tags: [Authentication]
+ *     summary: Refresh Token을 이용해 새로운 Access Token 발급
+ *     description: 기존의 Refresh Token을 사용하여 새로운 Access Token을 발급합니다.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *                 description: Refresh Token
+ *     responses:
+ *       200:
+ *         description: 새로운 Access Token 발급 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 accessToken:
+ *                   type: string
+ *                   description: 새로운 Access Token
+ *       401:
+ *         description: 유효하지 않은 Refresh Token
+ *       500:
+ *         description: 서버 오류
+ */
+const refreshToken = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+        if (!refreshToken) {
+            return res
+                .status(400)
+                .json({ error: "Refresh Token이 제공되지 않았습니다." });
+        }
+        // Refresh Token 검증
+        jsonwebtoken_1.default.verify(refreshToken, SECRET_KEY, (err, decoded) => {
+            if (err) {
+                return res
+                    .status(401)
+                    .json({ error: "유효하지 않은 Refresh Token입니다." });
+            }
+            // Refresh Token이 유효한 경우, 새로운 Access Token 발급
+            const newAccessToken = jsonwebtoken_1.default.sign({ id: decoded.id, email: decoded.email }, SECRET_KEY, {
+                expiresIn: "1h", // 새로운 Access Token 유효 기간 설정
+            });
+            // 새로운 Access Token 반환
+            return res.status(200).json({ accessToken: newAccessToken });
+        });
     }
     catch (error) {
         console.error(error);
@@ -279,10 +443,12 @@ const deleteUser = async (req, res) => {
 const service = {
     getuserList,
     createUser,
-    loginUser,
+    login,
     getUser,
     updateUser,
     deleteUser,
+    verifyToken,
+    refreshToken,
 };
 exports.default = service;
 //# sourceMappingURL=service.js.map
