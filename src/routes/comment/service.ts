@@ -63,7 +63,7 @@ const getCompaniesCommentList = async (req: Request, res: Response) => {
 // 코멘트 목록 조회 by ID
 /**
  * @swagger
- * /api/comments/{id}:
+ * /api/comments/{companyId}:
  *   get:
  *     summary: 특정 회사의 코멘트 조회
  *     tags: [Comment]
