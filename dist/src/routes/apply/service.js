@@ -5,15 +5,16 @@ const prismaClient_1 = require("../../prismaClient");
  * @swagger
  * /api/apply/{id}:
  *   post:
- *     summary: 회사에 지원서를 제출합니다.
- *     description: 이 엔드포인트는 사용자가 회사에 지원서를 제출할 수 있도록 합니다.
+ *     summary: 기업에 지원서 제출
+ *     description: 사용자가 특정 기업에 지원서를 제출합니다.
+ *     tags: [Apply]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: 회사의 ID입니다.
  *         schema:
- *           type: integer
+ *           type: string
+ *         description: 사용자의 고유 ID (로그인한 사용자 ID)
  *     requestBody:
  *       required: true
  *       content:
@@ -22,52 +23,62 @@ const prismaClient_1 = require("../../prismaClient");
  *             type: object
  *             properties:
  *               companyId:
- *                 type: integer
- *                 description: 사용자가 지원하는 회사의 ID입니다.
+ *                 type: string
+ *                 description: 기업 ID
  *               applicantName:
  *                 type: string
- *                 description: 지원자의 이름입니다.
+ *                 description: 지원자의 이름
  *               applicantPosition:
  *                 type: string
- *                 description: 지원자가 지원하는 직무입니다.
+ *                 description: 지원자의 직책
  *               applicantComment:
  *                 type: string
- *                 description: 지원자가 작성한 코멘트입니다.
+ *                 description: 지원자가 작성한 자기소개
  *     responses:
  *       201:
- *         description: 지원서가 성공적으로 제출되었습니다.
+ *         description: 지원서 제출 성공
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
  *                 id:
- *                   type: integer
- *                   description: 새로 생성된 지원서의 ID입니다.
+ *                   type: string
+ *                   description: 지원서 ID
  *                 companyId:
- *                   type: integer
- *                   description: 회사의 ID입니다.
+ *                   type: string
+ *                   description: 기업 ID
+ *                 userId:
+ *                   type: string
+ *                   description: 사용자의 고유 ID
+ *                 status:
+ *                   type: string
+ *                   enum: [PENDING, ACCEPTED, REJECTED]
+ *                   description: 지원 상태
  *                 applicantName:
  *                   type: string
- *                   description: 지원자의 이름입니다.
+ *                   description: 지원자의 이름
  *                 applicantPosition:
  *                   type: string
- *                   description: 지원자가 지원한 직무입니다.
+ *                   description: 지원자의 직책
  *                 applicantComment:
  *                   type: string
- *                   description: 지원자가 작성한 코멘트입니다.
+ *                   description: 지원자가 작성한 자기소개
+ *       400:
+ *         description: 잘못된 요청 파라미터
  *       500:
- *         description: 서버 내부 오류
+ *         description: 서버 오류
  */
 // 지원서 제출(POST /api/apply)
 const applyForCompany = async (req, res) => {
+    const { id } = req.params;
     const { companyId, applicantName, applicantPosition, applicantComment } = req.body;
     try {
         // 지원서 데이터 저장
         const newApplication = await prismaClient_1.prisma.userApplications.create({
             data: {
                 companyId,
-                userId: req.user.id, // 로그인한 사용자 ID
+                userId: id, // 로그인한 사용자 ID
                 status: "PENDING", // 기본 상태는 'PENDING'
                 applicantName,
                 applicantPosition,
