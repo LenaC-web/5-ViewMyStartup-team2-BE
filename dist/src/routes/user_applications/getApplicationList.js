@@ -69,7 +69,7 @@ const client_1 = require("@prisma/client");
  */
 const getApplicationList = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.params;
         if (!userId) {
             return res.status(401).json({ message: "일치하는 userId가 없습니다." });
         }

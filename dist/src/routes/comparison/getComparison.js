@@ -92,7 +92,7 @@ GET http://localhost:3000/api/comparison/pick?page=1&&keyword=펀더풀
  */
 const getCompanyApplication = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.params;
         const page = Math.max(parseInt(req.query.page?.toString() ?? "1"), 1);
         const limit = Math.max(parseInt(req.query.limit?.toString() ?? "5"), 1);
         const offset = (page - 1) * limit;
@@ -292,7 +292,6 @@ GET http://localhost:3000/api/comparison/search?page=1&&keyword=펀더풀
  */
 const getSearchCompany = async (req, res) => {
     try {
-        const userId = req.user.id;
         const keyword = req.query.keyword?.toString() ?? "";
         const page = parseInt(req.query.page?.toString() ?? "1") || 1;
         const limit = parseInt(req.query.limit?.toString() ?? "5") || 5;
