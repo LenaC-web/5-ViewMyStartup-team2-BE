@@ -302,7 +302,7 @@ GET http://localhost:3000/api/comparison/search?page=1&&keyword=펀더풀
  *                             type: integer
  *                           applicantRank:
  *                             type: integer
- *                           revenueRank:
+ *                           salesRevenueRank:
  *                             type: integer
  *                           employeeRank:
  *                             type: integer
@@ -404,7 +404,7 @@ const getSearchCompany = async (req: Request, res: Response) => {
       category: company.category.map((c) => c.category),
       applicantCnt: userApplicationCountMap.get(company.id) || 0,
       applicantRank: rankMaps.applicant.get(company.id) || null,
-      revenueRank: rankMaps.revenue.get(company.id) || null,
+      salesRevenueRank: rankMaps.revenue.get(company.id) || null,
       employeeRank: rankMaps.employee.get(company.id) || null,
     }));
 
