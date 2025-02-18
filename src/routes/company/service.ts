@@ -124,6 +124,99 @@ const getCompany = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/companies/detail/{id}:
+ *   get:
+ *     summary: 특정 회사 조회 (사용자 정보 포함)
+ *     tags: [Company]
+ *     description: 특정 회사를 조회하며, 사용자의 북마크 여부를 포함하여 반환합니다.
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         description: 조회할 회사의 ID
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: userId
+ *         in: query
+ *         description: 조회하는 사용자의 ID (북마크 여부 확인)
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 성공적으로 회사 정보를 반환
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 name:
+ *                   type: string
+ *                 image:
+ *                   type: string
+ *                   nullable: true
+ *                 content:
+ *                   type: string
+ *                 salesRevenue:
+ *                   type: string
+ *                   description: "매출액 (BigInt를 문자열로 변환)"
+ *                 employeeCnt:
+ *                   type: integer
+ *                   description: "사원 수"
+ *                 isBookmarked:
+ *                   type: boolean
+ *                   description: "사용자가 북마크한 상태 여부"
+ *       400:
+ *         description: 잘못된 요청 (ID 누락 등)
+ *       404:
+ *         description: 회사를 찾을 수 없음
+ *       500:
+ *         description: 서버 오류
+ */
+
+const getCompanyForUser = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { userId } = req.query as { userId?: string };
+  if (!id) {
+    return res.status(404).json({ message: "Company의 id값이 필요합니다." });
+  }
+  if (!userId) {
+    return res.status(404).json({ message: "user의 id값이 필요합니다." });
+  }
+  try {
+    const bookmark = await prisma.bookmark.findFirst({
+      where: { userId, companyId: id, deletedAt: null },
+    });
+
+    const company = await prisma.companies.findUnique({
+      where: {
+        id,
+        deletedAt: null,
+      },
+    });
+
+    if (!company) {
+      return res.status(404).json({ message: "해당 기업을 찾을 수 없습니다." });
+    }
+
+    const formattedCompany = {
+      ...company,
+      isBookmarked: !!bookmark,
+      salesRevenue: company.salesRevenue
+        ? company.salesRevenue.toString()
+        : "0",
+    };
+    res.status(200).json(formattedCompany); // 성공 결과 반환
+  } catch (err) {
+    console.error("Error message in getCompany", err);
+    res.status(500).json({ message: "기업 상세 조회 실패" });
+  }
+};
+
 // 📝회사 생성 createCompany
 /**
  * @swagger
@@ -343,6 +436,7 @@ const deleteCompany = async (req: Request, res: Response) => {
 const companyService = {
   getCompanies,
   getCompany,
+  getCompanyForUser,
   createCompany,
   updateCompany,
   deleteCompany,

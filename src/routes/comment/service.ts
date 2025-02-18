@@ -4,7 +4,7 @@ import { Request, Response } from "express";
 // 코멘트 목록 조회
 /**
  * @swagger
- * /api/companies/comments:
+ * /api/comments:
  *   get:
  *     summary: 모든 코멘트 목록 조회
  *     tags: [Comment]
@@ -46,7 +46,14 @@ const getCompaniesCommentList = async (req: Request, res: Response) => {
         company: true, // 회사 정보 포함
       },
     });
-    return res.status(200).json(comments);
+    const replacer = (key: string, value: any) => {
+      if (typeof value === "bigint") {
+        return value.toString(); // BigInt를 문자열로 변환
+      }
+      return value;
+    };
+
+    return res.status(200).json(JSON.parse(JSON.stringify(comments, replacer)));
   } catch (error) {
     console.error("Error message in getCompaniesCommentList", error);
     return res.status(500).json({ error: "코멘트 목록 조회 실패" });
@@ -56,29 +63,44 @@ const getCompaniesCommentList = async (req: Request, res: Response) => {
 // 코멘트 목록 조회 by ID
 /**
  * @swagger
- * /api/companies/{companyId}/comments:
+ * /api/comments/{companyId}:
  *   get:
- *     summary: 특정 회사의 코멘트 목록 조회
+ *     summary: 특정 회사의 코멘트 조회
  *     tags: [Comment]
+ *     description: 삭제되지 않은 코멘트만 조회하며, 최신 생성 순으로 정렬합니다.
  *     parameters:
- *       - in: path
- *         name: companyId
+ *       - name: companyId
+ *         in: path
+ *         description: 조회할 회사의 ID
  *         required: true
- *         description: 코멘트를 조회할 회사 ID
  *         schema:
  *           type: string
  *     responses:
  *       200:
- *         description: 해당 회사의 코멘트 목록 반환
+ *         description: 회사의 코멘트 목록
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   content:
+ *                     type: string
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
  *       400:
- *         description: 회사 ID 없음
+ *         description: 회사 ID가 요청에 없을 때
  *       500:
- *         description: 서버 오류
+ *         description: 코멘트 조회 중 오류 발생
  */
 const getCompaniesCommentListById = async (req: Request, res: Response) => {
   try {
     const { companyId } = req.params; // URL에서 route parameter로 받기 (예: /companies/123/comments)
-
+    console.log("ids:", companyId);
     if (!companyId) {
       return res.status(400).json({ error: "회사 ID가 필요합니다" });
     }
@@ -91,10 +113,6 @@ const getCompaniesCommentListById = async (req: Request, res: Response) => {
       orderBy: {
         createdAt: "desc", // 최신 생성순 정렬
       },
-      include: {
-        user: true, // 사용자 정보 포함
-        company: true, // 회사 정보 포함
-      },
     });
     return res.status(200).json(comments);
   } catch (error) {
@@ -106,7 +124,7 @@ const getCompaniesCommentListById = async (req: Request, res: Response) => {
 // 코멘트 생성
 /**
  * @swagger
- * /api/companies/comments:
+ * /api/comments:
  *   post:
  *     summary: 코멘트 생성
  *     tags: [Comment]
@@ -143,7 +161,15 @@ const createCompaniesComment = async (req: Request, res: Response) => {
         company: true,
       },
     });
-    return res.status(201).json(newComment);
+    const replacer = (key: string, value: any) => {
+      if (typeof value === "bigint") {
+        return value.toString();
+      }
+      return value;
+    };
+    return res
+      .status(201)
+      .json(JSON.parse(JSON.stringify(newComment, replacer)));
   } catch (error) {
     console.error("Error message in createCompaniesComment", error);
     return res.status(500).json({ error: "코멘트 생성 실패" });
@@ -153,8 +179,8 @@ const createCompaniesComment = async (req: Request, res: Response) => {
 // 코멘트 수정
 /**
  * @swagger
- * /api/companies/comments/{id}:
- *   put:
+ * /api/comments/{id}:
+ *   patch:
  *     summary: 코멘트 수정
  *     tags: [Comment]
  *     parameters:
@@ -181,6 +207,7 @@ const createCompaniesComment = async (req: Request, res: Response) => {
  */
 const updateCompaniesComment = async (req: Request, res: Response) => {
   const { id } = req.params;
+  console.log(id);
   const { content } = req.body;
   try {
     const updatedComment = await prisma.companiesComments.update({
@@ -194,7 +221,15 @@ const updateCompaniesComment = async (req: Request, res: Response) => {
         company: true,
       },
     });
-    return res.status(200).json(updatedComment);
+    const replacer = (key: string, value: any) => {
+      if (typeof value === "bigint") {
+        return value.toString();
+      }
+      return value;
+    };
+    return res
+      .status(201)
+      .json(JSON.parse(JSON.stringify(updatedComment, replacer)));
   } catch (error) {
     console.error("Error message in updateCompaniesComment", error);
     return res.status(500).json({ error: "코멘트 수정 실패" });
@@ -204,7 +239,7 @@ const updateCompaniesComment = async (req: Request, res: Response) => {
 // 코멘트 삭제
 /**
  * @swagger
- * /api/companies/comments/{id}:
+ * /api/comments/{id}:
  *   delete:
  *     summary: 코멘트 삭제
  *     tags: [Comment]
