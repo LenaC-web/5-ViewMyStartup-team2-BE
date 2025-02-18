@@ -196,11 +196,26 @@ const getCompanyForUser = async (req, res) => {
                 deletedAt: null,
             },
         });
+        const apllycant = await prismaClient_1.prisma.userApplications.findMany({
+            where: {
+                companyId: id,
+                deletedAt: null,
+            },
+        });
+        const category = await prismaClient_1.prisma.category.findFirst({
+            where: {
+                company: {
+                    some: { id },
+                },
+            },
+        });
         if (!company) {
             return res.status(404).json({ message: "해당 기업을 찾을 수 없습니다." });
         }
         const formattedCompany = {
             ...company,
+            apllycant: apllycant.length,
+            category: category,
             isBookmarked: !!bookmark,
             salesRevenue: company.salesRevenue
                 ? company.salesRevenue.toString()
