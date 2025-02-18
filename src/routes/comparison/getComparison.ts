@@ -69,7 +69,7 @@ GET http://localhost:3000/api/comparison/pick?page=1&&keyword=펀더풀
  *                             type: array
  *                             items:
  *                               type: string
- *                           applicantCount:
+ *                           applicantCnt:
  *                             type: integer
  *                           applicantRank:
  *                             type: integer
@@ -203,7 +203,7 @@ const getCompanyApplication = async (req: Request, res: Response) => {
       employeeCnt: company.employeeCnt,
       salesRevenue: company.salesRevenue.toString(),
       category: company.category.map((c) => c.category),
-      applicantCount: userApplicationCountMapForUser.get(company.id) || 0,
+      applicantCnt: userApplicationCountMapForUser.get(company.id) || 0,
       applicantRank: rankMaps.applicant.get(company.id) || null,
       salesRevenueRank: rankMaps.salesRevenue.get(company.id) || null,
       employeeRank: rankMaps.employee.get(company.id) || null,
@@ -298,11 +298,11 @@ GET http://localhost:3000/api/comparison/search?page=1&&keyword=펀더풀
  *                             type: array
  *                             items:
  *                               type: string
- *                           applicantCount:
+ *                           applicantCnt:
  *                             type: integer
  *                           applicantRank:
  *                             type: integer
- *                           revenueRank:
+ *                           salesRevenueRank:
  *                             type: integer
  *                           employeeRank:
  *                             type: integer
@@ -402,9 +402,9 @@ const getSearchCompany = async (req: Request, res: Response) => {
       employeeCnt: company.employeeCnt,
       salesRevenue: company.salesRevenue.toString(), // BigInt 처리
       category: company.category.map((c) => c.category),
-      applicantCount: userApplicationCountMap.get(company.id) || 0,
+      applicantCnt: userApplicationCountMap.get(company.id) || 0,
       applicantRank: rankMaps.applicant.get(company.id) || null,
-      revenueRank: rankMaps.revenue.get(company.id) || null,
+      salesRevenueRank: rankMaps.revenue.get(company.id) || null,
       employeeRank: rankMaps.employee.get(company.id) || null,
     }));
 
