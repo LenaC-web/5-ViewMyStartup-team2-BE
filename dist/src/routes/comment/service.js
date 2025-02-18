@@ -99,7 +99,6 @@ const getCompaniesCommentList = async (req, res) => {
 const getCompaniesCommentListById = async (req, res) => {
     try {
         const { companyId } = req.params; // URL에서 route parameter로 받기 (예: /companies/123/comments)
-        console.log("ids:", companyId);
         if (!companyId) {
             return res.status(400).json({ error: "회사 ID가 필요합니다" });
         }
@@ -110,6 +109,15 @@ const getCompaniesCommentListById = async (req, res) => {
             },
             orderBy: {
                 createdAt: "desc", // 최신 생성순 정렬
+            },
+            include: {
+                user: {
+                    select: {
+                        name: true,
+                        nickname: true,
+                        email: true,
+                    },
+                },
             },
         });
         return res.status(200).json(comments);
