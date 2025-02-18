@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 declare const service: {
+    serverState: (req: Request, res: Response) => Response<any, Record<string, any>>;
     getuserList: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
     createUser: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
     login: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;

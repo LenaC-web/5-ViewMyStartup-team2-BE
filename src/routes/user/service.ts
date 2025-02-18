@@ -6,7 +6,15 @@ import dotenv from "dotenv";
 
 dotenv.config();
 const SECRET_KEY = process.env.JWT_SECRET;
-
+const serverState = (req: Request, res: Response) => {
+  try {
+    const state = "activate";
+    return res.status(200).json(state); // 사용자 목록을 JSON 형식으로 응답
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: error });
+  }
+};
 // 사용자 목록 가져오기
 /**
  * @swagger
@@ -470,6 +478,7 @@ const deleteUser = async (req: Request, res: Response) => {
 };
 
 const service = {
+  serverState,
   getuserList,
   createUser,
   login,

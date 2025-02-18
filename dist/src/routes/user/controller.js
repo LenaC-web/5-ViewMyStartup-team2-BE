@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const service_1 = __importDefault(require("./service"));
 const router = express_1.default.Router();
 // 사용자 관련 엔드포인트
+router.get("/server", service_1.default.serverState); // 사용자 목록 가져오기
 router.get("/", service_1.default.getuserList); // 사용자 목록 가져오기
 router.get("/profile/:id", service_1.default.getUser); // 프로필 조회
 router.get("/verify/:token", service_1.default.verifyToken); //token 유효성 검사
