@@ -104,10 +104,6 @@ const getBookmarks = async (req: Request, res: Response) => {
       },
     });
 
-    if (bookmarks.length === 0) {
-      return res.status(404).json({ message: "즐겨찾기 데이터 없음" });
-    }
-
     const companyIds = bookmarks.map((bookmark) => bookmark.companyId);
 
     const companies = await prisma.companies.findMany({
