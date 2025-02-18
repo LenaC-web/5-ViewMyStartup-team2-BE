@@ -28,42 +28,34 @@ interface ErrorResponse {
 }
 /**
  * @swagger
- * /api/applications:
+ * /api/applications/{userId}:
  *   get:
- *     tags:
- *       - Applications
- *     summary: 지원 현황 조회
- *     description: 로그인한 사용자의 지원 내역을 조회합니다.
+ *     summary: 지원 내역 조회
+ *     description: 사용자가 지원한 기업 목록을 조회합니다.
+ *     tags: [Applications]
  *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 사용자의 고유 ID
  *       - in: query
  *         name: page
- *         required: false
- *         description: "조회할 페이지 번호 (기본값: 1)"
  *         schema:
  *           type: integer
  *           default: 1
+ *         description: 페이지 번호
  *       - in: query
  *         name: filter
- *         required: false
- *         description: "지원 상태 필터 (기본값: all)"
  *         schema:
  *           type: string
  *           enum: [all, PENDING, ACCEPTED, REJECTED]
+ *           default: all
+ *         description: 지원 상태 필터 (전체 / 대기중 / 합격 / 불합격)
  *     responses:
  *       200:
- *         description: 지원 현황 반환
- *       401:
- *         description: 인증 실패 (사용자를 찾을 수 없음)
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "일치하는 userId가 없습니다."
- *       404:
- *         description: 지원 내역을 찾을 수 없음
+ *         description: 지원 내역 조회 성공
  *         content:
  *           application/json:
  *             schema:
@@ -73,23 +65,55 @@ interface ErrorResponse {
  *                   type: array
  *                   items:
  *                     type: object
- *                   example: []
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         description: 지원서 ID
+ *                       companyId:
+ *                         type: string
+ *                         description: 기업 ID
+ *                       name:
+ *                         type: string
+ *                         description: 기업 이름
+ *                       image:
+ *                         type: string
+ *                         description: 기업 이미지 URL
+ *                       content:
+ *                         type: string
+ *                         description: 기업 설명
+ *                       category:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                         description: 기업 카테고리
+ *                       status:
+ *                         type: string
+ *                         enum: [PENDING, ACCEPTED, REJECTED]
+ *                         description: 지원 상태
+ *                       applicantCnt:
+ *                         type: integer
+ *                         description: 지원자 수
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                         description: 지원 일자
+ *                       updatedAt:
+ *                         type: string
+ *                         format: date-time
+ *                         description: 마지막 수정 일자
  *                 page:
  *                   type: integer
- *                   example: 1
+ *                   description: 현재 페이지 번호
  *                 totalPages:
  *                   type: integer
- *                   example: 0
+ *                   description: 전체 페이지 수
+ *       400:
+ *         description: 요청 파라미터 오류
  *       500:
  *         description: 서버 오류
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "서버 에러입니다."
  */
-declare const getApplicationList: (req: Request<{}, {}, {}, QueryType>, res: Response<ApplicationListResponse | ErrorResponse>) => Promise<Response<ApplicationListResponse | ErrorResponse, Record<string, any>>>;
+interface ParamsType {
+    userId: string;
+}
+declare const getApplicationList: (req: Request<ParamsType, {}, {}, QueryType>, res: Response<ApplicationListResponse | ErrorResponse>) => Promise<Response<ApplicationListResponse | ErrorResponse, Record<string, any>>>;
 export default getApplicationList;

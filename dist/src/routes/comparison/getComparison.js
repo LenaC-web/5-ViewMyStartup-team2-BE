@@ -4,35 +4,40 @@ const prismaClient_1 = require("../../prismaClient");
 const errHandler_1 = require("../err/errHandler");
 /* 지원한 회사 목록 조회
 GET http://localhost:3000/api/comparison/pick?page=1&&keyword=펀더풀
-*/
 /**
  * @swagger
- * /api/comparison/pick:
+ * /api/pick/{userId}:
  *   get:
  *     summary: 사용자가 지원한 회사 목록 조회
- *     description: 사용자가 지원한 회사 목록을 조회하고, 매출/직원 수/지원자 수에 따른 랭킹을 포함하여 반환합니다.
- *     tags: [Comparison]
+ *     description: 사용자가 지원한 회사의 목록을 랭킹 정보와 함께 조회합니다.
+ *     tags: [Companies]
  *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 사용자의 고유 ID
  *       - in: query
  *         name: page
  *         schema:
  *           type: integer
  *           default: 1
- *         description: 페이지 번호 (기본값 1)
+ *         description: 페이지 번호
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
  *           default: 5
- *         description: 한 페이지에 표시할 항목 수 (기본값 5)
+ *         description: 페이지당 회사 개수
  *       - in: query
  *         name: keyword
  *         schema:
  *           type: string
- *         description: 검색할 회사명 (선택 사항)
+ *         description: 회사명 검색어
  *     responses:
  *       200:
- *         description: 사용자가 지원한 회사 목록을 반환
+ *         description: 지원한 회사 목록 조회 성공
  *         content:
  *           application/json:
  *             schema:
@@ -54,45 +59,65 @@ GET http://localhost:3000/api/comparison/pick?page=1&&keyword=펀더풀
  *                         properties:
  *                           id:
  *                             type: string
+ *                             description: 회사 ID
  *                           name:
  *                             type: string
+ *                             description: 회사 이름
  *                           image:
  *                             type: string
+ *                             description: 회사 이미지 URL
  *                           content:
  *                             type: string
+ *                             description: 회사 설명
  *                           employeeCnt:
  *                             type: integer
+ *                             description: 직원 수
  *                           salesRevenue:
  *                             type: string
+ *                             description: 연매출 (문자열 변환)
  *                           category:
  *                             type: array
  *                             items:
  *                               type: string
+ *                             description: 회사 카테고리 목록
  *                           applicantCnt:
  *                             type: integer
+ *                             description: 해당 회사에 지원한 지원자 수
  *                           applicantRank:
  *                             type: integer
+ *                             nullable: true
+ *                             description: 지원자 수 기준 랭킹
  *                           salesRevenueRank:
  *                             type: integer
+ *                             nullable: true
+ *                             description: 매출 기준 랭킹
  *                           employeeRank:
  *                             type: integer
+ *                             nullable: true
+ *                             description: 직원 수 기준 랭킹
  *                     pagination:
  *                       type: object
  *                       properties:
  *                         currentPage:
  *                           type: integer
+ *                           description: 현재 페이지 번호
  *                         totalPages:
  *                           type: integer
+ *                           description: 전체 페이지 수
  *                         totalItems:
  *                           type: integer
+ *                           description: 전체 항목 수
  *                         itemsPerPage:
  *                           type: integer
+ *                           description: 페이지당 항목 수
+ *       400:
+ *         description: 요청 파라미터 오류
  *       500:
- *         description: 서버 오류 발생
+ *         description: 서버 오류
  */
 const getCompanyApplication = async (req, res) => {
     try {
-        const userId = req.params;
+        const { userId } = req.params;
         const page = Math.max(parseInt(req.query.page?.toString() ?? "1"), 1);
         const limit = Math.max(parseInt(req.query.limit?.toString() ?? "5"), 1);
         const offset = (page - 1) * limit;
